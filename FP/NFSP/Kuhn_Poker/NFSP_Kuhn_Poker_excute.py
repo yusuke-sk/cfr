@@ -24,6 +24,7 @@ from collections import deque
 import NFSP_Kuhn_Poker_trainer
 import NFSP_Kuhn_Poker_supervised_learning
 import NFSP_Kuhn_Poker_reinforcement_learning_DQN
+import NFSP_Kuhn_Poker_reinforcement_learning_SAC
 import NFSP_Kuhn_Poker_generate_data
 
 
@@ -49,7 +50,7 @@ config = dict(
   sl_loss_function = [nn.BCEWithLogitsLoss()][0],
 
   #rl
-  rl_algo = ["dfs", "dqn", "ddqn"][1],
+  rl_algo = ["dfs", "dqn", "ddqn", "sac"][3],
 
 
   #dqn
@@ -98,6 +99,23 @@ kuhn_trainer = NFSP_Kuhn_Poker_trainer.KuhnTrainer(
 
 if config["rl_algo"] == "dqn" or config["rl_algo"] == "dfs":
   kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning_DQN.ReinforcementLearning(
+    random_seed = config["random_seed"],
+    train_iterations = config["iterations"],
+    num_players= config["num_players"],
+    hidden_units_num = config["rl_hidden_units_num"],
+    lr = config["rl_lr"],
+    epochs = config["rl_epochs"],
+    sampling_num = config["rl_sampling_num"],
+    gamma = config["rl_gamma"],
+    tau = config["rl_tau"],
+    update_frequency = config["rl_update_frequency"],
+    loss_function = config["rl_loss_function"],
+    kuhn_trainer_for_rl = kuhn_trainer,
+    device = config["device"]
+    )
+
+elif config["rl_algo"] == "sac":
+  kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning_SAC.ReinforcementLearning(
     random_seed = config["random_seed"],
     train_iterations = config["iterations"],
     num_players= config["num_players"],
