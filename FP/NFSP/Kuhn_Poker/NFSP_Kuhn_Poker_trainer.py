@@ -159,7 +159,17 @@ class KuhnTrainer:
 
 
       if self.sigma_strategy_bit[player] == 0:
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
+        if self.rl_algo == "dqn":
+          sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
+        elif self.rl_algo == "sac":
+          s_bit = torch.Tensor(self.make_state_bit(s))
+          sampling_action = self.RL.action_step(s_bit)
+
+          print(sampling_action)
+
+        else:
+          raise Exception('Error!')
+
       elif self.sigma_strategy_bit[player] == 1:
         sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s])
 
@@ -191,7 +201,7 @@ class KuhnTrainer:
           self.M_SL = []
 
 
-        if self.rl_algo == "dqn" or self.rl_algo == "ddqn":
+        if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
 
           self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
