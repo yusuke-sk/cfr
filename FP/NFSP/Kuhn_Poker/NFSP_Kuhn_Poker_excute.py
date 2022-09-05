@@ -32,9 +32,9 @@ import NFSP_Kuhn_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**3,
+  iterations = 10**5,
   num_players = 2,
-  wandb_save = [True, False][1],
+  wandb_save = [True, False][0],
 
 
   #train
@@ -46,7 +46,7 @@ config = dict(
   sl_hidden_units_num= 64,
   sl_lr = 0.001,
   sl_epochs = 2,
-  sl_sampling_num = 64,
+  sl_sampling_num = 8,
   sl_loss_function = [nn.BCEWithLogitsLoss()][0],
 
   #rl
@@ -55,9 +55,9 @@ config = dict(
 
   #dqn
   rl_hidden_units_num= 64,
-  rl_lr = 0.1,
+  rl_lr = 0.001,
   rl_epochs = 2,
-  rl_sampling_num = 64,
+  rl_sampling_num = 8,
   rl_gamma = 1.0,
   rl_tau = 0.1,
   rl_update_frequency = 30,
@@ -78,7 +78,7 @@ config = dict(
 
 if config["wandb_save"]:
   #wandb.init(project="Kuhn_Poker_n_players", name="{}_players_NFSP".format(config["num_players"]))
-  wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+  wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   wandb.config.update(config)
   wandb.define_metric("exploitability", summary="last")
   wandb.define_metric("avg_utility", summary="last")
