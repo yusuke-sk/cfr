@@ -165,8 +165,6 @@ class KuhnTrainer:
           s_bit = torch.Tensor(self.make_state_bit(s))
           sampling_action = self.RL.action_step(s_bit)
 
-          print(sampling_action)
-
         else:
           raise Exception('Error!')
 
@@ -203,8 +201,8 @@ class KuhnTrainer:
 
         if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
-
           self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
+
 
 
         elif self.rl_algo == "dfs":

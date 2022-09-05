@@ -1,6 +1,5 @@
 
 # _________________________________ Library _________________________________
-from platform import node
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -16,8 +15,8 @@ import torch.nn.functional as F
 from torch.distributions import Categorical
 
 
-import warnings
-warnings.filterwarnings('ignore')
+#import warnings
+#warnings.filterwarnings('ignore')
 
 
 
@@ -39,25 +38,17 @@ class ActorNetwork(nn.Module):
 
 
     def forward(self, x):
-      act_value = self.actor(x).reshape(-1,self.action_num)
 
-      greedy_actions = torch.argmax(act_value, dim=1, keepdim=True)
+      action_probs = F.softmax(self.actor(x).reshape(-1, 2), dim=1)
 
-      return greedy_actions
-
-
-    def sample(self, x):
-
-      action_probs = F.softmax(self.actor(x), dim=1)
       action_dist = Categorical(action_probs)
       actions = action_dist.sample().view(-1, 1)
 
       log_action_probs = torch.log(action_probs + 1e-8)
 
+      #print(x, action_probs)
 
       return actions, action_probs, log_action_probs
-
-
 
 
 class CriticNetwork(nn.Module):
@@ -131,8 +122,6 @@ class ReinforcementLearning:
     self.critic_2_optim = optim.Adam(self.critic.Q2.parameters(), lr = self.lr)
     self.actor_optim = optim.Adam(self.actor.parameters(), lr = self.lr)
 
-
-
     self.critic_target.load_state_dict(self.critic.state_dict())
 
     self.target_entropy_ratio = 0.98
@@ -145,16 +134,11 @@ class ReinforcementLearning:
     self.alpha_optim = optim.Adam([self.log_alpha], lr = lr)
 
 
-    #a = torch.Tensor([[1,0,0,0,0,0,0], [0,1,0,0,0,0,0]])
-    #print(self.actor.sample(a))
-
-
 
 
   def RL_learn(self, memory, target_player, update_strategy, k):
 
     samples = random.sample(memory, min(self.sampling_num, len(memory)))
-
 
     train_states = [sars[0] for sars in samples]
     train_actions = [sars[1] for sars in samples]
@@ -169,9 +153,8 @@ class ReinforcementLearning:
     train_done = torch.tensor(train_done).float().reshape(-1,1).to(self.device)
 
 
-    #Q関数の更新
+    #Q関数の更新 J(θ)
     q1_loss, q2_loss = self.calc_critic_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
-
 
     self.critic_1_optim.zero_grad()
     q1_loss.backward()
@@ -181,12 +164,17 @@ class ReinforcementLearning:
     q2_loss.backward()
     self.critic_2_optim.step()
 
+
     #方策の更新
     policy_loss, entropies = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
+
 
     self.actor_optim.zero_grad()
     policy_loss.backward()
     self.actor_optim.step()
+
+    #print(policy_loss)
+
 
     #エントロピー係数の更新
     entropy_loss = self.calc_entropy_loss(entropies)
@@ -204,8 +192,6 @@ class ReinforcementLearning:
             self.critic_target.load_state_dict(self.critic.state_dict())
 
 
-
-
   def calc_q_value(self, states, actions):
     """
     入力 state, action → 出力 2つのネットワークの Q(s,a) の値
@@ -219,14 +205,17 @@ class ReinforcementLearning:
 
 
   def calc_target_q_value(self, states, actions, rewards, next_states, done):
+    # 目標値: next_value
+
     with torch.no_grad():
-      next_actions, next_action_prob, next_action_log_prob = self.actor.sample(next_states)
+      next_actions, next_action_prob, next_action_log_prob = self.actor(next_states)
       next_q1_value, next_q2_value = self.critic_target(next_states)
 
-      #期待値計算 keepdim=Flase→[62] , keepdim=True→[62,1]
-      next_q_value = (next_action_prob * ( torch.min(next_q1_value, next_q2_value)  - self.alpha * next_action_log_prob)).sum(dim=1, keepdim=True)
+      #期待値計算 元の型は[62,2] → sum(dim1) → keepdim=Flase→[62] , keepdim=True→[62,1]
+      next_V = (next_action_prob * ( torch.min(next_q1_value, next_q2_value)  - self.alpha * next_action_log_prob)).sum(dim=1, keepdim=True)
 
-    next_value = rewards + (1.0 - done) * self.gamma * next_q_value
+
+    next_value = rewards + (1.0 - done) * self.gamma * next_V
 
     return next_value
 
@@ -241,29 +230,32 @@ class ReinforcementLearning:
     q1_loss = F.mse_loss(current_q1_value, target_q_value)
     q2_loss = F.mse_loss(current_q2_value, target_q_value)
 
+
     return q1_loss, q2_loss
 
 
   def calc_policy_loss(self, states, actions, rewards, next_states, done):
 
-    _, action_prob, action_log_prob = self.actor.sample(states)
+    _, action_prob, action_log_prob = self.actor(states)
 
     with torch.no_grad():
       q1_value, q2_value = self.critic(states)
 
     #エントロピーの計算
-    entropies = -torch.sum( action_prob * action_log_prob, dim=1, keepdim=True)
+    entropies = -torch.sum(action_prob * action_log_prob, dim=1, keepdim=True)
 
     #Q関数の計算
     q_value =  torch.sum(torch.min(q1_value, q2_value) * action_prob, dim=1, keepdim=True)
 
-    policy_loss = -1 * (q_value - self.alpha * entropies).mean()
+    # todo self.alpha の前の- + どっち
+    policy_loss = -1 * (q_value + self.alpha * entropies).mean()
 
     return policy_loss, entropies.detach()
 
 
   def calc_entropy_loss(self, entropy):
 
+    # todo entropyが0だと log_alpha → 大 これが続く
     entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropy))
 
     return entropy_loss
@@ -271,7 +263,7 @@ class ReinforcementLearning:
 
   def action_step(self, state):
     with torch.no_grad():
-      action = self.actor(state)
+      action, _ , _ = self.actor(state)
 
       return action.item()
 
