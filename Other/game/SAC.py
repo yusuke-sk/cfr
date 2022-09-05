@@ -155,7 +155,7 @@ class Agent:
 
 
         #方策の更新
-        policy_loss, entropies = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
+        policy_loss = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
 
 
         self.actor_optim.zero_grad()
@@ -166,7 +166,7 @@ class Agent:
 
 
         #エントロピー係数の更新
-        entropy_loss = self.calc_entropy_loss(entropies)
+        entropy_loss = self.calc_entropy_loss(train_states)
 
         self.alpha_optim.zero_grad()
         entropy_loss.backward()
@@ -175,6 +175,7 @@ class Agent:
         self.alpha = self.log_alpha.exp()
 
         self.update_count += 1
+
 
         if self.update_count % self.update_frequency ==  0 :
                 self.critic_target.load_state_dict(self.critic.state_dict())
@@ -238,13 +239,13 @@ class Agent:
         # todo self.alpha の前の- + どっち
         policy_loss = -1 * (q_value + self.alpha * entropies).mean()
 
-        return policy_loss, entropies.detach()
+        return policy_loss
 
 
-    def calc_entropy_loss(self, entropy):
+    def calc_entropy_loss(self, states):
+        _, action_prob, action_log_prob = self.actor(states)
 
-        # todo entropyが0だと log_alpha → 大 これが続く
-        entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropy))
+        entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + action_log_prob))
 
         return entropy_loss
 

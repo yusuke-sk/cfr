@@ -119,7 +119,7 @@ class SupervisedLearning:
 
 
     if self.kuhn_trainer.wandb_save and self.save_count % 100 == 0:
-      wandb.log({'iteration': iteration_t, 'loss_sl_{}'.format(target_player):  np.mean(total_loss)})
+      wandb.log({'iteration': iteration_t, 'loss_sl':  np.mean(total_loss)})
     self.save_count += 1
 
 

@@ -37,6 +37,8 @@ class KuhnTrainer:
 
     self.random_seed_fix(self.random_seed)
 
+    self.rl_update_count = 0
+
 
 # _________________________________ Train main method _________________________________
   def train(self, eta, memory_size_rl, memory_size_sl, rl_algo, sl_algo, rl_module, sl_module, gd_module):
@@ -130,6 +132,8 @@ class KuhnTrainer:
         #self.database_for_plot["iteration"].append(iteration_t)
         #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
+        #print(self.N_count)
+
 
   def random_seed_fix(self, random_seed):
       random.seed(random_seed)
@@ -164,7 +168,6 @@ class KuhnTrainer:
         elif self.rl_algo == "sac":
           s_bit = torch.Tensor(self.make_state_bit(s))
           sampling_action = self.RL.action_step(s_bit)
-
         else:
           raise Exception('Error!')
 
@@ -190,7 +193,11 @@ class KuhnTrainer:
 
 
       self.game_step_count += 1
+
       if self.game_step_count % self.RL.sampling_num == 0:
+
+        self.rl_update_count += 1
+        #print(self.rl_update_count)
 
         if self.sl_algo == "mlp":
           self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
