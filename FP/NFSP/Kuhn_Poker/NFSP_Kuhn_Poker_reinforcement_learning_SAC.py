@@ -165,7 +165,7 @@ class ReinforcementLearning:
     self.critic_2_optim.step()
 
     #方策の更新
-    policy_loss = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
+    policy_loss, entropies = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
 
     self.actor_optim.zero_grad()
     policy_loss.backward()
@@ -175,7 +175,7 @@ class ReinforcementLearning:
 
 
     #エントロピー係数の更新
-    entropy_loss = self.calc_entropy_loss(train_states)
+    entropy_loss = self.calc_entropy_loss(entropies)
 
     self.alpha_optim.zero_grad()
     entropy_loss.backward()
@@ -254,15 +254,18 @@ class ReinforcementLearning:
     # todo self.alpha の前の- + どっち
     policy_loss = -1 * (q_value + self.alpha * entropies).mean()
 
-    return policy_loss
+    #return policy_loss, entropies.detach()
+    #change
+    return policy_loss, action_log_prob.detach()
 
 
-  def calc_entropy_loss(self, states):
-      _, action_prob, action_log_prob = self.actor(states)
+  def calc_entropy_loss(self, entropies):
 
-      entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + action_log_prob))
+    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropies))
+    #change
+    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + entropies))
 
-      return entropy_loss
+    return entropy_loss
 
 
   def action_step(self, state):

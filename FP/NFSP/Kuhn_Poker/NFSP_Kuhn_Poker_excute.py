@@ -32,7 +32,7 @@ import NFSP_Kuhn_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**6,
+  iterations = 10**7,
   num_players = 2,
   wandb_save = [True, False][0],
 
@@ -55,7 +55,7 @@ config = dict(
 
   #dqn
   rl_hidden_units_num= 64,
-  rl_lr = 0.001,
+  rl_lr = 0.0001,
   rl_epochs = 2,
   rl_sampling_num = 128,
   rl_gamma = 1.0,
