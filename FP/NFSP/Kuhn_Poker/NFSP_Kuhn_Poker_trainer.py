@@ -132,7 +132,19 @@ class KuhnTrainer:
         #self.database_for_plot["iteration"].append(iteration_t)
         #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
+
+        # 挙動 check
         #print(self.N_count)
+        #print(len(self.M_RL))
+
+        """
+        with torch.no_grad():
+          print("====", iteration_t, "====")
+          for node_X in self.N_count.keys():
+            eval_s_bit = torch.Tensor(self.make_state_bit(node_X))
+            eval_action = self.RL.action_step(eval_s_bit)
+            print(node_X, ":", eval_action)
+        """
 
 
   def random_seed_fix(self, random_seed):

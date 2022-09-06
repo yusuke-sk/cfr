@@ -48,6 +48,7 @@ config = dict(
   sl_epochs = 2,
   sl_sampling_num = 128,
   sl_loss_function = [nn.BCEWithLogitsLoss()][0],
+  sl_algo = ["cnt", "mlp"][0],
 
   #rl
   rl_algo = ["dfs", "dqn", "ddqn", "sac"][3],
@@ -55,13 +56,15 @@ config = dict(
 
   #dqn
   rl_hidden_units_num= 64,
-  rl_lr = 0.0001,
+  rl_entropy_lr = 0.0001,
+  rl_policy_lr =  0.0001,
+  rl_critic_lr =  0.0001,
   rl_epochs = 2,
   rl_sampling_num = 128,
   rl_gamma = 1.0,
   rl_tau = 0.1,
   rl_update_frequency = 30,
-  sl_algo = ["cnt", "mlp"][0],
+
 
 
 
@@ -120,7 +123,9 @@ elif config["rl_algo"] == "sac":
     train_iterations = config["iterations"],
     num_players= config["num_players"],
     hidden_units_num = config["rl_hidden_units_num"],
-    lr = config["rl_lr"],
+    entropy_lr = config["rl_entropy_lr"],
+    policy_lr = config["rl_policy_lr"],
+    critic_lr = config["rl_critic_lr"],
     epochs = config["rl_epochs"],
     sampling_num = config["rl_sampling_num"],
     gamma = config["rl_gamma"],

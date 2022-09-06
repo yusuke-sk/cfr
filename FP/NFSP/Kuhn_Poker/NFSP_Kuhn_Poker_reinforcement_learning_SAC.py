@@ -86,14 +86,18 @@ class Double_Q_network(nn.Module):
 
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
-  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device):
+  def __init__(self, train_iterations, num_players, hidden_units_num, entropy_lr, policy_lr, critic_lr , \
+        epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device):
+
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.num_actions = 2
     self.action_id = {"p":0, "b":1}
     self.STATE_BIT_LEN = (self.NUM_PLAYERS + 1) + 2*(self.NUM_PLAYERS *2 - 2)
     self.hidden_units_num = hidden_units_num
-    self.lr = lr
+    self.entropy_lr = entropy_lr
+    self.policy_lr = policy_lr
+    self.critic_lr = critic_lr
     self.epochs = epochs
     self.sampling_num = sampling_num
     self.gamma = gamma
@@ -118,9 +122,9 @@ class ReinforcementLearning:
 
     self.actor = ActorNetwork(self.STATE_BIT_LEN, self.num_actions, self.hidden_units_num).to(self.device)
 
-    self.critic_1_optim = optim.Adam(self.critic.Q1.parameters(), lr = self.lr)
-    self.critic_2_optim = optim.Adam(self.critic.Q2.parameters(), lr = self.lr)
-    self.actor_optim = optim.Adam(self.actor.parameters(), lr = self.lr)
+    self.critic_1_optim = optim.Adam(self.critic.Q1.parameters(), lr = self.critic_lr)
+    self.critic_2_optim = optim.Adam(self.critic.Q2.parameters(), lr = self.critic_lr)
+    self.actor_optim = optim.Adam(self.actor.parameters(), lr = self.policy_lr)
 
     self.critic_target.load_state_dict(self.critic.state_dict())
 
@@ -131,62 +135,63 @@ class ReinforcementLearning:
     #optimize log_alpha
     self.log_alpha = torch.zeros(1, requires_grad=True).to(self.device)
     self.alpha = self.log_alpha.exp()
-    self.alpha_optim = optim.Adam([self.log_alpha], lr = lr)
+    self.alpha_optim = optim.Adam([self.log_alpha], lr = self.entropy_lr)
 
 
 
 
   def RL_learn(self, memory, target_player, update_strategy, k):
 
-    samples = random.sample(memory, min(self.sampling_num, len(memory)))
+    for _ in range(self.epochs):
+      samples = random.sample(memory, min(self.sampling_num, len(memory)))
 
-    train_states = [sars[0] for sars in samples]
-    train_actions = [sars[1] for sars in samples]
-    train_rewards = [sars[2] for sars in samples]
-    train_next_states = [sars[3] for sars in samples]
-    train_done = [sars[4] for sars in samples]
+      train_states = [sars[0] for sars in samples]
+      train_actions = [sars[1] for sars in samples]
+      train_rewards = [sars[2] for sars in samples]
+      train_next_states = [sars[3] for sars in samples]
+      train_done = [sars[4] for sars in samples]
 
-    train_states = torch.tensor(train_states).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
-    train_actions = torch.tensor(train_actions).float().reshape(-1,1).to(self.device)
-    train_rewards = torch.tensor(train_rewards).float().reshape(-1,1).to(self.device)
-    train_next_states = torch.tensor(train_next_states).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
-    train_done = torch.tensor(train_done).float().reshape(-1,1).to(self.device)
-
-
-    #Q関数の更新 J(θ)
-    q1_loss, q2_loss = self.calc_critic_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
-
-    self.critic_1_optim.zero_grad()
-    q1_loss.backward()
-    self.critic_1_optim.step()
-
-    self.critic_2_optim.zero_grad()
-    q2_loss.backward()
-    self.critic_2_optim.step()
-
-    #方策の更新
-    policy_loss, entropies = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
-
-    self.actor_optim.zero_grad()
-    policy_loss.backward()
-    self.actor_optim.step()
-
-    #print(policy_loss)
+      train_states = torch.tensor(train_states).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+      train_actions = torch.tensor(train_actions).float().reshape(-1,1).to(self.device)
+      train_rewards = torch.tensor(train_rewards).float().reshape(-1,1).to(self.device)
+      train_next_states = torch.tensor(train_next_states).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+      train_done = torch.tensor(train_done).float().reshape(-1,1).to(self.device)
 
 
-    #エントロピー係数の更新
-    entropy_loss = self.calc_entropy_loss(entropies)
+      #Q関数の更新 J(θ)
+      q1_loss, q2_loss = self.calc_critic_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
 
-    self.alpha_optim.zero_grad()
-    entropy_loss.backward()
-    self.alpha_optim.step()
+      self.critic_1_optim.zero_grad()
+      q1_loss.backward()
+      self.critic_1_optim.step()
 
-    self.alpha = self.log_alpha.exp()
+      self.critic_2_optim.zero_grad()
+      q2_loss.backward()
+      self.critic_2_optim.step()
 
-    self.update_count += 1
+      #方策の更新
+      policy_loss, entropies = self.calc_policy_loss(train_states, train_actions, train_rewards, train_next_states, train_done)
 
-    if self.update_count % self.update_frequency ==  0 :
-            self.critic_target.load_state_dict(self.critic.state_dict())
+      self.actor_optim.zero_grad()
+      policy_loss.backward()
+      self.actor_optim.step()
+
+      #print(policy_loss)
+
+
+      #エントロピー係数の更新
+      entropy_loss = self.calc_entropy_loss(entropies)
+
+      self.alpha_optim.zero_grad()
+      entropy_loss.backward()
+      self.alpha_optim.step()
+
+      self.alpha = self.log_alpha.exp()
+
+      self.update_count += 1
+
+      if self.update_count % self.update_frequency ==  0 :
+              self.critic_target.load_state_dict(self.critic.state_dict())
 
 
     if self.kuhn_trainer.wandb_save and self.save_count % 100 == 0:
@@ -254,16 +259,16 @@ class ReinforcementLearning:
     # todo self.alpha の前の- + どっち
     policy_loss = -1 * (q_value + self.alpha * entropies).mean()
 
-    #return policy_loss, entropies.detach()
+    return policy_loss, entropies.detach()
     #change
-    return policy_loss, action_log_prob.detach()
+    #return policy_loss, action_log_prob.detach()
 
 
   def calc_entropy_loss(self, entropies):
 
     entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropies))
     #change
-    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + entropies))
+    #entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + entropies))
 
     return entropy_loss
 
