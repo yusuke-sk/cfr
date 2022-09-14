@@ -37,7 +37,6 @@ class KuhnTrainer:
 
     self.random_seed_fix(self.random_seed)
 
-    self.update_count = 0
     self.step_per_learning_update = step_per_learning_update
 
 
@@ -82,7 +81,6 @@ class KuhnTrainer:
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
-
 
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
       self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
@@ -178,11 +176,13 @@ class KuhnTrainer:
       if self.sigma_strategy_bit[player] == 0:
         if self.rl_algo == "dqn":
           sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
+
         elif self.rl_algo == "sac":
           s_bit = torch.Tensor(self.make_state_bit(s))
           sampling_action = self.RL.action_step(s_bit)
         else:
           raise Exception('Error!')
+
 
       elif self.sigma_strategy_bit[player] == 1:
         sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s])
@@ -209,9 +209,6 @@ class KuhnTrainer:
 
       if self.game_step_count % self.step_per_learning_update == 0:
 
-        self.update_count += 1
-        #print(self.update_count)
-
         if self.sl_algo == "mlp":
           self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
         elif self.sl_algo == "cnt":
@@ -222,7 +219,6 @@ class KuhnTrainer:
         if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
           self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
-
 
 
         elif self.rl_algo == "dfs":

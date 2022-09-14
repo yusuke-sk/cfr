@@ -31,56 +31,85 @@ import NFSP_Kuhn_Poker_generate_data
 # _________________________________ config _________________________________
 
 config = dict(
-  random_seed = [42, 1000, 10000][1],
+  random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
   num_players = 2,
   wandb_save = [True, False][0],
 
+  #rl
+  rl_algo = ["dfs", "dqn", "ddqn", "sac"][1]
 
-  #train
+)
+
+if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn"] :
+  config_plus = dict(
+  eta = 0.1,
+  memory_size_rl = 2*(10**4),
+  memory_size_sl = 2*(10**5),
+  step_per_learning_update = 64,
+
+  #sl
+  sl_hidden_units_num= 64,
+  sl_lr = 0.001,
+  sl_epochs = 2,
+  sl_sampling_num = 64,
+  sl_loss_function = [nn.BCEWithLogitsLoss()][0],
+  sl_algo = ["cnt", "mlp"][0],
+
+  #dqn 用
+  rl_lr = 0.1,
+  rl_hidden_units_num= 64,
+  rl_epochs = 2,
+  rl_sampling_num = 64,
+  rl_gamma = 1.0,
+  rl_tau = 0.1,
+  rl_update_frequency = 30,
+  rl_loss_function = [F.mse_loss, nn.HuberLoss()][0],
+  # device
+  #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
+  device = torch.device('cpu')
+  )
+
+  config.update(config_plus)
+
+elif config["rl_algo"] in ["sac"] :
+  config_plus = dict(
   eta = 0.1,
   memory_size_rl = 2*(10**4),
   memory_size_sl = 2*(10**5),
   step_per_learning_update = 128,
 
-  #sl
   sl_hidden_units_num= 64,
-  sl_lr = 0.0001,
+  sl_lr = 0.001,
   sl_epochs = 2,
-  sl_sampling_num = 128,
+  sl_sampling_num = 64,
   sl_loss_function = [nn.BCEWithLogitsLoss()][0],
-  sl_algo = ["cnt", "mlp"][0],
+  sl_algo = ["cnt", "mlp"][1],
 
-  #rl
-  rl_algo = ["dfs", "dqn", "ddqn", "sac"][3],
-
-
-  #dqn
   rl_hidden_units_num= 64,
-  rl_entropy_lr = 0.0001,
-  rl_policy_lr =  0.0001,
-  rl_critic_lr =  0.0001,
   rl_epochs = 2,
-  rl_sampling_num = 128,
+  rl_sampling_num = 64,
   rl_gamma = 1.0,
   rl_tau = 0.1,
   rl_update_frequency = 30,
-
-
-
+  rl_entropy_lr = 0.0001,
+  rl_policy_lr =  0.0001,
+  rl_critic_lr =  0.0001,
   rl_loss_function = [F.mse_loss, nn.HuberLoss()][0],
-
   # device
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu')
+  )
 
-)
-
+  config.update(config_plus)
 
 
 if config["wandb_save"]:
   #wandb.init(project="Kuhn_Poker_n_players", name="{}_players_NFSP".format(config["num_players"]))
-  wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+  if config["rl_algo"] == "sac":
+    wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+  else:
+    wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   wandb.config.update(config)
   wandb.define_metric("exploitability", summary="last")
   wandb.define_metric("avg_utility", summary="last")
@@ -138,8 +167,6 @@ elif config["rl_algo"] == "sac":
 
 
 
-
-
 kuhn_SL = NFSP_Kuhn_Poker_supervised_learning.SupervisedLearning(
   random_seed = config["random_seed"],
   train_iterations = config["iterations"],
@@ -187,6 +214,9 @@ if config["rl_algo"] == "dqn" or config["rl_algo"] == "dfs":
   result_dict_avg = {}
   for key, value in sorted(kuhn_trainer.avg_strategy.items()):
     result_dict_avg[key] = value
+    eval_s_bit = torch.Tensor(kuhn_trainer.make_state_bit(key))
+    Q_value = kuhn_trainer.RL.deep_q_network.forward(eval_s_bit)
+    print(key, Q_value)
   df = pd.DataFrame(result_dict_avg.values(), index=result_dict_avg.keys(), columns=['Pass_avg', "Bet_avg"])
   df.index.name = "Node"
 
@@ -209,6 +239,9 @@ elif config["rl_algo"] == "sac":
   for key, value in sorted(kuhn_trainer.epsilon_greedy_q_learning_strategy.items()):
     eval_s_bit = torch.Tensor(kuhn_trainer.make_state_bit(key))
     action_prob = kuhn_trainer.RL.action_step_prob(eval_s_bit)
+    current_q1_values, current_q2_values = kuhn_trainer.RL.critic(eval_s_bit)
+    #print(key, current_q1_values, current_q2_values)
+
     result_dict_br[key] = action_prob
   df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])
   df1.index.name = "Node"

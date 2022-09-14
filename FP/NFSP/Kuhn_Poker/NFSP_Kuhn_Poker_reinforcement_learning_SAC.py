@@ -133,9 +133,17 @@ class ReinforcementLearning:
     self.target_entropy = - np.log(1.0/self.num_actions) * self.target_entropy_ratio
 
     #optimize log_alpha
-    self.log_alpha = torch.zeros(1, requires_grad=True).to(self.device)
-    self.alpha = self.log_alpha.exp()
-    self.alpha_optim = optim.Adam([self.log_alpha], lr = self.entropy_lr)
+
+    self.value_of_alpha_change = False
+
+    if self.value_of_alpha_change :
+      self.log_alpha = torch.zeros(1, requires_grad=True).to(self.device)
+      self.alpha = self.log_alpha.exp()
+      self.alpha_optim = optim.Adam([self.log_alpha], lr = self.entropy_lr)
+
+    else:
+      self.log_alpha = torch.Tensor([np.log(0)])
+      self.alpha = self.log_alpha.exp()
 
 
 
@@ -176,17 +184,17 @@ class ReinforcementLearning:
       policy_loss.backward()
       self.actor_optim.step()
 
-      #print(policy_loss)
-
 
       #エントロピー係数の更新
       entropy_loss = self.calc_entropy_loss(entropies)
 
-      self.alpha_optim.zero_grad()
-      entropy_loss.backward()
-      self.alpha_optim.step()
+      if self.value_of_alpha_change:
+        self.alpha_optim.zero_grad()
+        entropy_loss.backward()
+        self.alpha_optim.step()
 
       self.alpha = self.log_alpha.exp()
+
 
       self.update_count += 1
 
@@ -239,6 +247,8 @@ class ReinforcementLearning:
     q1_loss = F.mse_loss(current_q1_value, target_q_value)
     q2_loss = F.mse_loss(current_q2_value, target_q_value)
 
+    #print(states[0], actions[0], rewards[0], next_states[0], current_q1_value[0], target_q_value[0])
+
 
     return q1_loss, q2_loss
 
@@ -259,16 +269,13 @@ class ReinforcementLearning:
     # todo self.alpha の前の- + どっち
     policy_loss = -1 * (q_value + self.alpha * entropies).mean()
 
-    #return policy_loss, entropies.detach()
-    #change
-    return policy_loss, action_log_prob.detach()
+    return policy_loss, entropies.detach()
 
 
   def calc_entropy_loss(self, entropies):
 
-    #entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropies))
-    #change
-    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + entropies))
+    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropies))
+
 
     return entropy_loss
 
@@ -282,6 +289,7 @@ class ReinforcementLearning:
   def action_step_prob(self, state):
     with torch.no_grad():
       _, action_prob , _ = self.actor(state)
+
 
       return action_prob[0].tolist()
 
