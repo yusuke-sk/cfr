@@ -23,7 +23,7 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class KuhnTrainer:
-  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
@@ -37,7 +37,8 @@ class KuhnTrainer:
 
     self.random_seed_fix(self.random_seed)
 
-    self.rl_update_count = 0
+    self.update_count = 0
+    self.step_per_learning_update = step_per_learning_update
 
 
 # _________________________________ Train main method _________________________________
@@ -206,10 +207,10 @@ class KuhnTrainer:
 
       self.game_step_count += 1
 
-      if self.game_step_count % self.RL.sampling_num == 0:
+      if self.game_step_count % self.step_per_learning_update == 0:
 
-        self.rl_update_count += 1
-        #print(self.rl_update_count)
+        self.update_count += 1
+        #print(self.update_count)
 
         if self.sl_algo == "mlp":
           self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)

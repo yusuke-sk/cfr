@@ -31,8 +31,8 @@ import NFSP_Kuhn_Poker_generate_data
 # _________________________________ config _________________________________
 
 config = dict(
-  random_seed = [42, 1000, 10000][0],
-  iterations = 10**7,
+  random_seed = [42, 1000, 10000][1],
+  iterations = 10**6,
   num_players = 2,
   wandb_save = [True, False][0],
 
@@ -41,6 +41,7 @@ config = dict(
   eta = 0.1,
   memory_size_rl = 2*(10**4),
   memory_size_sl = 2*(10**5),
+  step_per_learning_update = 128,
 
   #sl
   sl_hidden_units_num= 64,
@@ -64,8 +65,6 @@ config = dict(
   rl_gamma = 1.0,
   rl_tau = 0.1,
   rl_update_frequency = 30,
-
-
 
 
 
@@ -95,7 +94,8 @@ kuhn_trainer = NFSP_Kuhn_Poker_trainer.KuhnTrainer(
   random_seed = config["random_seed"],
   train_iterations = config["iterations"],
   num_players= config["num_players"],
-  wandb_save = config["wandb_save"]
+  wandb_save = config["wandb_save"],
+  step_per_learning_update = config["step_per_learning_update"],
   )
 
 
@@ -183,19 +183,37 @@ if not config["wandb_save"]:
   print("final_exploitability", list(kuhn_trainer.exploitability_list.items())[-1])
 
 
-result_dict_avg = {}
-for key, value in sorted(kuhn_trainer.avg_strategy.items()):
-  result_dict_avg[key] = value
-df = pd.DataFrame(result_dict_avg.values(), index=result_dict_avg.keys(), columns=['Pass_avg', "Bet_avg"])
-df.index.name = "Node"
+if config["rl_algo"] == "dqn" or config["rl_algo"] == "dfs":
+  result_dict_avg = {}
+  for key, value in sorted(kuhn_trainer.avg_strategy.items()):
+    result_dict_avg[key] = value
+  df = pd.DataFrame(result_dict_avg.values(), index=result_dict_avg.keys(), columns=['Pass_avg', "Bet_avg"])
+  df.index.name = "Node"
 
-result_dict_br = {}
-for key, value in sorted(kuhn_trainer.epsilon_greedy_q_learning_strategy.items()):
-  result_dict_br[key] = value
-df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])
-df1.index.name = "Node"
+  result_dict_br = {}
+  for key, value in sorted(kuhn_trainer.epsilon_greedy_q_learning_strategy.items()):
+    result_dict_br[key] = value
+  df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])
+  df1.index.name = "Node"
 
-df2 = pd.concat([df, df1], axis=1)
+  df2 = pd.concat([df, df1], axis=1)
+
+elif config["rl_algo"] == "sac":
+  result_dict_avg = {}
+  for key, value in sorted(kuhn_trainer.avg_strategy.items()):
+    result_dict_avg[key] = value
+  df = pd.DataFrame(result_dict_avg.values(), index=result_dict_avg.keys(), columns=['Pass_avg', "Bet_avg"])
+  df.index.name = "Node"
+
+  result_dict_br = {}
+  for key, value in sorted(kuhn_trainer.epsilon_greedy_q_learning_strategy.items()):
+    eval_s_bit = torch.Tensor(kuhn_trainer.make_state_bit(key))
+    action_prob = kuhn_trainer.RL.action_step_prob(eval_s_bit)
+    result_dict_br[key] = action_prob
+  df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])
+  df1.index.name = "Node"
+
+  df2 = pd.concat([df, df1], axis=1)
 
 
 if config["wandb_save"]:

@@ -259,16 +259,16 @@ class ReinforcementLearning:
     # todo self.alpha の前の- + どっち
     policy_loss = -1 * (q_value + self.alpha * entropies).mean()
 
-    return policy_loss, entropies.detach()
+    #return policy_loss, entropies.detach()
     #change
-    #return policy_loss, action_log_prob.detach()
+    return policy_loss, action_log_prob.detach()
 
 
   def calc_entropy_loss(self, entropies):
 
-    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropies))
+    #entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy - entropies))
     #change
-    #entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + entropies))
+    entropy_loss = - torch.mean(self.log_alpha * (self.target_entropy + entropies))
 
     return entropy_loss
 
@@ -278,6 +278,12 @@ class ReinforcementLearning:
       action, _ , _ = self.actor(state)
 
       return action.item()
+
+  def action_step_prob(self, state):
+    with torch.no_grad():
+      _, action_prob , _ = self.actor(state)
+
+      return action_prob[0].tolist()
 
 
 doctest.testmod()
