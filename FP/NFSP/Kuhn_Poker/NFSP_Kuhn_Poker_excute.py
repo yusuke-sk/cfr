@@ -32,21 +32,21 @@ import NFSP_Kuhn_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**6,
+  iterations = 10**4,
   num_players = 2,
-  wandb_save = [True, False][0],
+  wandb_save = [True, False][1],
 
   #rl
-  rl_algo = ["dfs", "dqn", "ddqn", "sac"][1]
+  rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][4]
 
 )
 
-if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn"] :
+if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
   config_plus = dict(
   eta = 0.1,
   memory_size_rl = 2*(10**4),
   memory_size_sl = 2*(10**5),
-  step_per_learning_update = 64,
+  step_per_learning_update = 128,
 
   #sl
   sl_hidden_units_num= 64,
@@ -54,7 +54,7 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn"] :
   sl_epochs = 2,
   sl_sampling_num = 64,
   sl_loss_function = [nn.BCEWithLogitsLoss()][0],
-  sl_algo = ["cnt", "mlp"][0],
+  sl_algo = ["cnt", "mlp"][1],
 
   #dqn 用
   rl_lr = 0.1,
@@ -67,7 +67,9 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn"] :
   rl_loss_function = [F.mse_loss, nn.HuberLoss()][0],
   # device
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
-  device = torch.device('cpu')
+  device = torch.device('cpu'),
+  #sql
+  rl_alpha = 0.005,
   )
 
   config.update(config_plus)
@@ -94,8 +96,10 @@ elif config["rl_algo"] in ["sac"] :
   rl_update_frequency = 30,
   rl_entropy_lr = 0.0001,
   rl_policy_lr =  0.0001,
-  rl_critic_lr =  0.0001,
+  rl_critic_lr =  0.1,
   rl_loss_function = [F.mse_loss, nn.HuberLoss()][0],
+  rl_value_of_alpha_change = False,
+  rl_alpha = 0.1,
   # device
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu')
@@ -116,7 +120,6 @@ if config["wandb_save"]:
 
 
 
-
 # _________________________________ train _________________________________
 
 kuhn_trainer = NFSP_Kuhn_Poker_trainer.KuhnTrainer(
@@ -128,8 +131,7 @@ kuhn_trainer = NFSP_Kuhn_Poker_trainer.KuhnTrainer(
   )
 
 
-
-if config["rl_algo"] == "dqn" or config["rl_algo"] == "dfs":
+if config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"]:
   kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning_DQN.ReinforcementLearning(
     random_seed = config["random_seed"],
     train_iterations = config["iterations"],
@@ -143,8 +145,10 @@ if config["rl_algo"] == "dqn" or config["rl_algo"] == "dfs":
     update_frequency = config["rl_update_frequency"],
     loss_function = config["rl_loss_function"],
     kuhn_trainer_for_rl = kuhn_trainer,
-    device = config["device"]
+    device = config["device"],
+    alpha = config["rl_alpha"]
     )
+
 
 elif config["rl_algo"] == "sac":
   kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning_SAC.ReinforcementLearning(
@@ -162,9 +166,10 @@ elif config["rl_algo"] == "sac":
     update_frequency = config["rl_update_frequency"],
     loss_function = config["rl_loss_function"],
     kuhn_trainer_for_rl = kuhn_trainer,
-    device = config["device"]
+    device = config["device"],
+    value_of_alpha_change = config["rl_value_of_alpha_change"],
+    alpha= config["rl_alpha"]
     )
-
 
 
 kuhn_SL = NFSP_Kuhn_Poker_supervised_learning.SupervisedLearning(
@@ -181,14 +186,11 @@ kuhn_SL = NFSP_Kuhn_Poker_supervised_learning.SupervisedLearning(
   )
 
 
-
-
 kuhn_GD = NFSP_Kuhn_Poker_generate_data.GenerateData(
   random_seed = config["random_seed"],
   num_players= config["num_players"],
   kuhn_trainer_for_gd= kuhn_trainer
   )
-
 
 
 kuhn_trainer.train(
@@ -210,7 +212,7 @@ if not config["wandb_save"]:
   print("final_exploitability", list(kuhn_trainer.exploitability_list.items())[-1])
 
 
-if config["rl_algo"] == "dqn" or config["rl_algo"] == "dfs":
+if config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"]:
   result_dict_avg = {}
   for key, value in sorted(kuhn_trainer.avg_strategy.items()):
     result_dict_avg[key] = value
@@ -240,7 +242,7 @@ elif config["rl_algo"] == "sac":
     eval_s_bit = torch.Tensor(kuhn_trainer.make_state_bit(key))
     action_prob = kuhn_trainer.RL.action_step_prob(eval_s_bit)
     current_q1_values, current_q2_values = kuhn_trainer.RL.critic(eval_s_bit)
-    #print(key, current_q1_values, current_q2_values)
+    print(key, current_q1_values, current_q2_values)
 
     result_dict_br[key] = action_prob
   df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])

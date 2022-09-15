@@ -13,6 +13,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
+from torch.distributions import Categorical
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -34,7 +35,7 @@ class DQN(nn.Module):
 
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
-  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device):
+  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device, alpha):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.num_actions = 2
@@ -52,6 +53,7 @@ class ReinforcementLearning:
     self.random_seed = random_seed
     self.device = device
     self.save_count = 0
+    self.alpha = alpha
 
     self.rl_algo = None
 
@@ -105,6 +107,10 @@ class ReinforcementLearning:
 
         outputs = self.deep_q_network_target(train_next_states).gather(1,not_target_nn_max_action.type(torch.int64)).detach()
 
+      elif self.rl_algo == "sql":
+        q_value = self.deep_q_network_target(train_next_states).detach()
+
+        outputs = self.alpha * torch.log(torch.sum(torch.exp(q_value/self.alpha), dim=1, keepdim=True))
 
       q_targets = train_rewards + (1 - train_done) * self.gamma * outputs
 
@@ -132,27 +138,45 @@ class ReinforcementLearning:
 
 
 
+    if self.rl_algo in ["dqn" , "ddqn"]:
+      #eval
+      self.deep_q_network.eval()
+      with torch.no_grad():
+        for node_X , _ in update_strategy.items():
+          inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+          y = self.deep_q_network.forward(inputs_eval).to('cpu').detach().numpy()
 
-    #eval
-    self.deep_q_network.eval()
-    with torch.no_grad():
-      for node_X , _ in update_strategy.items():
-        inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
-        y = self.deep_q_network.forward(inputs_eval).to('cpu').detach().numpy()
 
+          if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
+            action = np.random.randint(self.num_actions)
+            if action == 0:
+              update_strategy[node_X] = np.array([1, 0], dtype=float)
+            else:
+              update_strategy[node_X] = np.array([0, 1], dtype=float)
 
-        if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
-          action = np.random.randint(self.num_actions)
-          if action == 0:
-            update_strategy[node_X] = np.array([1, 0], dtype=float)
           else:
-            update_strategy[node_X] = np.array([0, 1], dtype=float)
+            if y[0][0] > y[0][1]:
+              update_strategy[node_X] = np.array([1, 0], dtype=float)
+            else:
+              update_strategy[node_X] = np.array([0, 1], dtype=float)
 
-        else:
-          if y[0][0] > y[0][1]:
-            update_strategy[node_X] = np.array([1, 0], dtype=float)
-          else:
-            update_strategy[node_X] = np.array([0, 1], dtype=float)
+
+    elif self.rl_algo in ["sql"]:
+        with torch.no_grad():
+          for node_X , _ in update_strategy.items():
+            inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+            q = self.deep_q_network.forward(inputs_eval)
+            v = self.alpha * torch.log(torch.sum(torch.exp(q/self.alpha), dim=1, keepdim=True)).squeeze()
+
+            dist = torch.exp((q-v)/self.alpha)
+
+            dist = (dist / torch.sum(dist))[0]
+
+            update_strategy[node_X] = dist.numpy()
+
+            assert 0.999 <= dist[0] + dist[1]  <= 1.001
+
+
 
 
 

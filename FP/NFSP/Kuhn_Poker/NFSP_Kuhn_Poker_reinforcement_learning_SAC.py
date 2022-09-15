@@ -87,7 +87,7 @@ class Double_Q_network(nn.Module):
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
   def __init__(self, train_iterations, num_players, hidden_units_num, entropy_lr, policy_lr, critic_lr , \
-        epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device):
+        epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device, value_of_alpha_change, alpha):
 
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
@@ -109,6 +109,8 @@ class ReinforcementLearning:
     self.device = device
     self.save_count = 0
     self.update_count = 0
+    self.value_of_alpha_change = value_of_alpha_change
+    self.alpha = alpha
 
     self.rl_algo = None
 
@@ -134,15 +136,13 @@ class ReinforcementLearning:
 
     #optimize log_alpha
 
-    self.value_of_alpha_change = False
-
     if self.value_of_alpha_change :
-      self.log_alpha = torch.zeros(1, requires_grad=True).to(self.device)
+      self.log_alpha = torch.zeros(0, requires_grad=True).to(self.device)
       self.alpha = self.log_alpha.exp()
       self.alpha_optim = optim.Adam([self.log_alpha], lr = self.entropy_lr)
 
     else:
-      self.log_alpha = torch.Tensor([np.log(0)])
+      self.log_alpha = torch.Tensor([np.log(self.alpha)])
       self.alpha = self.log_alpha.exp()
 
 
@@ -282,9 +282,11 @@ class ReinforcementLearning:
 
   def action_step(self, state):
     with torch.no_grad():
-      action, _ , _ = self.actor(state)
+      action, action_prob , _ = self.actor(state)
 
-      return action.item()
+
+      #return action.item()
+
 
   def action_step_prob(self, state):
     with torch.no_grad():

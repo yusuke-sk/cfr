@@ -174,7 +174,7 @@ class KuhnTrainer:
 
 
       if self.sigma_strategy_bit[player] == 0:
-        if self.rl_algo == "dqn":
+        if self.rl_algo in ["dqn" , "dfs" , "ddqn", "sql"]:
           sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
 
         elif self.rl_algo == "sac":
