@@ -31,10 +31,10 @@ import NFSP_Kuhn_Poker_generate_data
 # _________________________________ config _________________________________
 
 config = dict(
-  random_seed = [42, 1000, 10000][0],
-  iterations = 10**4,
+  random_seed = [42, 1000, 10000][1],
+  iterations = 10**6,
   num_players = 2,
-  wandb_save = [True, False][1],
+  wandb_save = [True, False][0],
 
   #rl
   rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][4]
@@ -69,7 +69,7 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu'),
   #sql
-  rl_alpha = 0.005,
+  rl_alpha = 2.0,
   )
 
   config.update(config_plus)
@@ -111,7 +111,9 @@ elif config["rl_algo"] in ["sac"] :
 if config["wandb_save"]:
   #wandb.init(project="Kuhn_Poker_n_players", name="{}_players_NFSP".format(config["num_players"]))
   if config["rl_algo"] == "sac":
-    wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+    wandb.init(project="Kuhn_Poker_{}players_SAC_al".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+  elif config["rl_algo"] == "sql":
+    wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
   else:
     wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   wandb.config.update(config)

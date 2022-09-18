@@ -112,6 +112,7 @@ class ReinforcementLearning:
 
         outputs = self.alpha * torch.log(torch.sum(torch.exp(q_value/self.alpha), dim=1, keepdim=True))
 
+
       q_targets = train_rewards + (1 - train_done) * self.gamma * outputs
 
 
@@ -137,8 +138,8 @@ class ReinforcementLearning:
     self.save_count += 1
 
 
-
-    if self.rl_algo in ["dqn" , "ddqn"]:
+    #sql でも ε-greedyにするなら下に追加 → , "sql"
+    if self.rl_algo in ["dqn" , "ddqn", "sql"]:
       #eval
       self.deep_q_network.eval()
       with torch.no_grad():
@@ -166,17 +167,11 @@ class ReinforcementLearning:
           for node_X , _ in update_strategy.items():
             inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
             q = self.deep_q_network.forward(inputs_eval)
-            v = self.alpha * torch.log(torch.sum(torch.exp(q/self.alpha), dim=1, keepdim=True)).squeeze()
-
-            dist = torch.exp((q-v)/self.alpha)
-
-            dist = (dist / torch.sum(dist))[0]
-
-            update_strategy[node_X] = dist.numpy()
+            dist = torch.exp(q/self.alpha)
+            dist = (dist / torch.sum(dist))[0].numpy()
+            update_strategy[node_X] = dist
 
             assert 0.999 <= dist[0] + dist[1]  <= 1.001
-
-
 
 
 
