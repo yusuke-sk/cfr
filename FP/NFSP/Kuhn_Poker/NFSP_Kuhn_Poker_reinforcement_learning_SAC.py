@@ -196,6 +196,7 @@ class ReinforcementLearning:
       self.alpha = self.log_alpha.exp()
 
 
+
       self.update_count += 1
 
       if self.update_count % self.update_frequency ==  0 :
@@ -283,15 +284,12 @@ class ReinforcementLearning:
   def action_step(self, state):
     with torch.no_grad():
       action, action_prob , _ = self.actor(state)
-
-
-      #return action.item()
+      return action.item()
 
 
   def action_step_prob(self, state):
     with torch.no_grad():
       _, action_prob , _ = self.actor(state)
-
 
       return action_prob[0].tolist()
 
