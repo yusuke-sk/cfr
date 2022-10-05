@@ -35,7 +35,8 @@ class DQN(nn.Module):
 
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
-  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device, alpha):
+  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num,  \
+    gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device, alpha, rl_strategy):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.num_actions = 2
@@ -54,6 +55,7 @@ class ReinforcementLearning:
     self.device = device
     self.save_count = 0
     self.alpha = alpha
+    self.rl_strategy = rl_strategy
 
     self.rl_algo = None
 
@@ -110,8 +112,10 @@ class ReinforcementLearning:
       elif self.rl_algo == "sql":
         q_value = self.deep_q_network_target(train_next_states).detach()
 
-        outputs = self.alpha * torch.log(torch.sum(torch.exp(q_value/self.alpha), dim=1, keepdim=True))
-
+        #専用関数
+        outputs = self.alpha * torch.logsumexp(q_value/self.alpha, dim=1, keepdim=True)
+        #outputs = self.alpha * torch.log(torch.sum(torch.exp(q_value/self.alpha), dim=1, keepdim=True))
+        #print(outputs)
 
       q_targets = train_rewards + (1 - train_done) * self.gamma * outputs
 
@@ -139,7 +143,7 @@ class ReinforcementLearning:
 
 
     #sql でも ε-greedyにするなら下に追加 → , "sql"
-    if self.rl_algo in ["dqn" , "ddqn", "sql"]:
+    if (self.rl_algo in ["dqn" , "ddqn"]) or (self.rl_algo == "sql" and  self.rl_strategy == "ε-greedy"):
       #eval
       self.deep_q_network.eval()
       with torch.no_grad():
@@ -162,14 +166,15 @@ class ReinforcementLearning:
               update_strategy[node_X] = np.array([0, 1], dtype=float)
 
 
-    elif self.rl_algo in ["sql"]:
+    elif self.rl_algo in ["sql"]  and  self.rl_strategy == "proportional_Q" :
         with torch.no_grad():
           for node_X , _ in update_strategy.items():
             inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
             q = self.deep_q_network.forward(inputs_eval)
-            dist = torch.exp(q/self.alpha)
-            dist = (dist / torch.sum(dist))[0].numpy()
+            dist = F.softmax(q/self.alpha, dim=1)[0].numpy()
+
             update_strategy[node_X] = dist
+
 
             assert 0.999 <= dist[0] + dist[1]  <= 1.001
 
