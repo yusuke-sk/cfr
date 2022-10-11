@@ -34,7 +34,8 @@ class DQN(nn.Module):
 
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
-  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, update_frequency, leduc_trainer_for_rl, random_seed):
+  def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, \
+    update_frequency, leduc_trainer_for_rl, random_seed, alpha, rl_strategy):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.num_actions = 3
@@ -53,6 +54,9 @@ class ReinforcementLearning:
     self.card_rank  = self.leduc_trainer.card_rank
     self.infoset_action_player_dict = {}
     self.rl_algo = None
+
+    self.alpha = alpha
+    self.rl_strategy = rl_strategy
 
 
     self.deep_q_network = DQN(state_num = self.STATE_BIT_LEN, action_num = self.num_actions, hidden_units_num = self.hidden_units_num)
@@ -75,6 +79,10 @@ class ReinforcementLearning:
     self.deep_q_network_target.eval()
     self.epsilon = 0.06/(k**0.5)
 
+    #new self.alpha change
+    self.alpha = 5.0 / (k**0.05)
+
+
     total_loss = []
 
     for _ in range(self.epochs):
@@ -95,50 +103,58 @@ class ReinforcementLearning:
       train_done = torch.tensor(train_done).float().reshape(-1,1)
 
 
-      if self.rl_algo == "dqn":
-        outputs_all = self.deep_q_network_target(train_next_states).detach()
+      if  self.rl_algo in ["dqn", "ddqn"] :
+        if self.rl_algo == "dqn":
+          outputs_all = self.deep_q_network_target(train_next_states).detach()
 
-      #Double DQN
-      elif self.rl_algo == "ddqn":
-        not_target_nn_max_action_list = []
+        #Double DQN
+        elif self.rl_algo == "ddqn":
+          not_target_nn_max_action_list = []
 
-        for node_X, Q_value in zip(s_prime_array, self.deep_q_network(train_next_states)):
-          action_list = self.leduc_trainer.node_possible_action[node_X]
-          max_idx = action_list[0]
+          for node_X, Q_value in zip(s_prime_array, self.deep_q_network(train_next_states)):
+            action_list = self.leduc_trainer.node_possible_action[node_X]
+            max_idx = action_list[0]
+            if node_X == None:
+              not_target_nn_max_action_list.append(max_idx)
+            else:
+              for ai in action_list:
+                if Q_value[ai] >= Q_value[max_idx]:
+                  max_idx = ai
+
+              not_target_nn_max_action_list.append(max_idx)
+
+
+          outputs_all = self.deep_q_network_target(train_next_states).gather(1,not_target_nn_max_action_list.type(torch.int64)).detach()
+
+        for node_X, Q_value in zip(s_prime_array, outputs_all):
           if node_X == None:
-            not_target_nn_max_action_list.append(max_idx)
+            outputs.append(0)
           else:
+            action_list = self.leduc_trainer.node_possible_action[node_X]
+            max_idx = action_list[0]
+
             for ai in action_list:
               if Q_value[ai] >= Q_value[max_idx]:
                 max_idx = ai
 
-            not_target_nn_max_action_list.append(max_idx)
 
+            outputs.append(Q_value[max_idx])
 
-        outputs_all = self.deep_q_network_target(train_next_states).gather(1,not_target_nn_max_action_list.type(torch.int64)).detach()
+      #SQL
+      elif self.rl_algo == "sql":
+        outputs_all = self.deep_q_network_target(train_next_states).detach()
 
-
-
-      for node_X, Q_value in zip(s_prime_array, outputs_all):
-
-
-        if node_X == None:
-          outputs.append(0)
-        else:
-          action_list = self.leduc_trainer.node_possible_action[node_X]
-          max_idx = action_list[0]
-
-          for ai in action_list:
-            if Q_value[ai] >= Q_value[max_idx]:
-              max_idx = ai
-
-
-          outputs.append(Q_value[max_idx])
+        for node_X, Q_value in zip(s_prime_array, outputs_all):
+          if node_X == None:
+            outputs.append(0)
+          else:
+            action_list = self.leduc_trainer.node_possible_action[node_X]
+            q_values = Q_value[action_list].reshape(1, len(action_list))
+            output = self.alpha * torch.logsumexp(q_values/self.alpha, dim=1)
+            outputs.append(output.item())
 
 
       outputs = torch.tensor(outputs).float().unsqueeze(1)
-
-
       q_targets = train_rewards + (1 - train_done) * self.gamma * outputs
 
       q_now = self.deep_q_network(train_states)

@@ -206,7 +206,7 @@ class LeducTrainer:
             self.M_SL = []
 
           # RL update
-          if self.rl_algo == "dqn":
+          if self.rl_algo in ["dqn", "ddqn", "sql"] :
             self.RL.rl_algo = self.rl_algo
             self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
 

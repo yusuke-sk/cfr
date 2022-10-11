@@ -26,7 +26,7 @@ import NFSP_Leduc_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**7,
+  iterations = 10**6,
   num_players = 2,
   wandb_save = [True, False][0],
 
@@ -51,13 +51,20 @@ config = dict(
   rl_tau = 0.1,
   rl_update_frequency = 300,
   sl_algo = ["cnt", "mlp"][1],
-  rl_algo = ["dfs", "dqn", "ddqn"][1]
+  rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
+  #sql
+  rl_alpha = 5,
+  rl_strategy = ["ε-greedy", "proportional_Q"][0],
 )
 
 
 
 if config["wandb_save"]:
-  wandb.init(project="Leduc_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+  if config["rl_algo"] == "sql":
+    wandb.init(project="Leduc_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
+    #wandb.init(project="Leduc_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+  else:
+    wandb.init(project="Leduc_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   wandb.config.update(config)
   wandb.define_metric("exploitability", summary="last")
   wandb.define_metric("avg_utility", summary="last")
@@ -84,7 +91,9 @@ leduc_RL = NFSP_Leduc_Poker_reinforcement_learning.ReinforcementLearning(
   gamma = config["rl_gamma"],
   tau = config["rl_tau"],
   update_frequency = config["rl_update_frequency"],
-  leduc_trainer_for_rl = leduc_trainer
+  leduc_trainer_for_rl = leduc_trainer,
+  alpha = config["rl_alpha"],
+  rl_strategy = config["rl_strategy"]
   )
 
 
