@@ -81,6 +81,8 @@ class ReinforcementLearning:
     self.deep_q_network_target.eval()
     self.epsilon = 0.06/(k**0.5)
 
+    #new alpha change
+    self.alpha = 5/(k**0.5)
 
     total_loss = []
     # train

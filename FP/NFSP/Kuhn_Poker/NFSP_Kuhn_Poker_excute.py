@@ -32,9 +32,9 @@ import NFSP_Kuhn_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][1],
-  iterations = 10**3,
-  num_players = 2,
-  wandb_save = [True, False][1],
+  iterations = 10**6,
+  num_players = 4,
+  wandb_save = [True, False][0],
 
   #rl
   rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][4]
@@ -69,7 +69,7 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu'),
   #sql
-  rl_alpha = 0.01,
+  rl_alpha = 5,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
   )
 
