@@ -82,7 +82,7 @@ class ReinforcementLearning:
     self.epsilon = 0.06/(k**0.5)
 
     #new alpha change
-    self.alpha = 5/(k**0.5)
+    self.alpha = 10/(k**0.5)
 
     total_loss = []
     # train
