@@ -35,7 +35,7 @@ class DQN(nn.Module):
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
   def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num, gamma, tau, \
-    update_frequency, leduc_trainer_for_rl, random_seed, alpha, rl_strategy):
+    update_frequency, leduc_trainer_for_rl, random_seed, alpha, rl_strategy, alpha_discrease):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.num_actions = 3
@@ -58,6 +58,10 @@ class ReinforcementLearning:
     self.alpha = alpha
     self.rl_strategy = rl_strategy
 
+    self.alpha_discrease = alpha_discrease
+
+    if self.alpha_discrease:
+      self.initial_alpha = self.alpha
 
     self.deep_q_network = DQN(state_num = self.STATE_BIT_LEN, action_num = self.num_actions, hidden_units_num = self.hidden_units_num)
     self.deep_q_network_target = DQN(state_num = self.STATE_BIT_LEN, action_num = self.num_actions, hidden_units_num = self.hidden_units_num)
@@ -79,8 +83,9 @@ class ReinforcementLearning:
     self.deep_q_network_target.eval()
     self.epsilon = 0.06/(k**0.5)
 
-    #new self.alpha change
-    self.alpha = 5.0 / (k**0.05)
+    #new alpha change
+    if self.alpha_discrease:
+      self.alpha = self.initial_alpha/(k**0.5)
 
 
     total_loss = []

@@ -36,7 +36,7 @@ class DQN(nn.Module):
 # _________________________________ RL class _________________________________
 class ReinforcementLearning:
   def __init__(self, train_iterations, num_players, hidden_units_num, lr, epochs, sampling_num,  \
-    gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device, alpha, rl_strategy):
+    gamma, tau, update_frequency, loss_function, kuhn_trainer_for_rl, random_seed, device, alpha, rl_strategy, alpha_discrease):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.num_actions = 2
@@ -56,6 +56,10 @@ class ReinforcementLearning:
     self.save_count = 0
     self.alpha = alpha
     self.rl_strategy = rl_strategy
+    self.alpha_discrease = alpha_discrease
+
+    if self.alpha_discrease:
+      self.initial_alpha = self.alpha
 
     self.rl_algo = None
 
@@ -82,7 +86,8 @@ class ReinforcementLearning:
     self.epsilon = 0.06/(k**0.5)
 
     #new alpha change
-    self.alpha = 10/(k**0.5)
+    if self.alpha_discrease:
+      self.alpha = self.initial_alpha/(k**0.5)
 
     total_loss = []
     # train

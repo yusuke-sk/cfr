@@ -33,7 +33,7 @@ import NFSP_Kuhn_Poker_generate_data
 config = dict(
   random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
-  num_players = 5,
+  num_players = 4,
   wandb_save = [True, False][0],
 
   #rl
@@ -69,8 +69,9 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu'),
   #sql
-  rl_alpha = 10,
+  rl_alpha = 1e+1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
+  alpha_discrease = [True, False][0],
   )
 
   config.update(config_plus)
@@ -115,8 +116,8 @@ if config["wandb_save"]:
     #wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
     wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   elif config["rl_algo"] == "sql":
-    #wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
-    wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
+    wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+    #wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
 
   else:
     wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
@@ -153,7 +154,8 @@ if config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"]:
     kuhn_trainer_for_rl = kuhn_trainer,
     device = config["device"],
     alpha = config["rl_alpha"],
-    rl_strategy = config["rl_strategy"]
+    rl_strategy = config["rl_strategy"],
+    alpha_discrease = config["alpha_discrease"]
     )
 
 
