@@ -22,6 +22,7 @@ from tqdm import tqdm
 from collections import deque
 
 import NFSP_Kuhn_Poker_trainer
+import Parallelized_NFSP_Kuhn_Poker_trainer
 import NFSP_Kuhn_Poker_supervised_learning
 import NFSP_Kuhn_Poker_reinforcement_learning_DQN
 import NFSP_Kuhn_Poker_reinforcement_learning_SAC
@@ -32,9 +33,10 @@ import NFSP_Kuhn_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**6,
+  iterations = 10**3,
   num_players = 2,
   wandb_save = [True, False][1],
+  parallelized = [True, False][0],
 
   #rl
   rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
@@ -129,13 +131,23 @@ if config["wandb_save"]:
 
 # _________________________________ train _________________________________
 
-kuhn_trainer = NFSP_Kuhn_Poker_trainer.KuhnTrainer(
-  random_seed = config["random_seed"],
-  train_iterations = config["iterations"],
-  num_players= config["num_players"],
-  wandb_save = config["wandb_save"],
-  step_per_learning_update = config["step_per_learning_update"],
-  )
+if config["parallelized"]:
+  kuhn_trainer = Parallelized_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
+    random_seed = config["random_seed"],
+    train_iterations = config["iterations"],
+    num_players= config["num_players"],
+    wandb_save = config["wandb_save"],
+    step_per_learning_update = config["step_per_learning_update"],
+    )
+
+else:
+  kuhn_trainer = NFSP_Kuhn_Poker_trainer.KuhnTrainer(
+    random_seed = config["random_seed"],
+    train_iterations = config["iterations"],
+    num_players= config["num_players"],
+    wandb_save = config["wandb_save"],
+    step_per_learning_update = config["step_per_learning_update"],
+    )
 
 
 if config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"]:
