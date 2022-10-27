@@ -27,7 +27,7 @@ import NFSP_Leduc_Poker_generate_data
 config = dict(
   random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
-  num_players = 2,
+  num_players = 3,
   wandb_save = [True, False][0],
 
 
@@ -51,19 +51,19 @@ config = dict(
   rl_tau = 0.1,
   rl_update_frequency = 300,
   sl_algo = ["cnt", "mlp"][1],
-  rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
+  rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
   #sql
-  rl_alpha = 5e-12,
+  rl_alpha = 5e+1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
-  alpha_discrease = [True, False][1],
+  alpha_discrease = [True, False][0],
 )
 
 
 
 if config["wandb_save"]:
   if config["rl_algo"] == "sql":
-    wandb.init(project="Leduc_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
-    #wandb.init(project="Leduc_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+    #wandb.init(project="Leduc_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+    wandb.init(project="Leduc_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   else:
     wandb.init(project="Leduc_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
   wandb.config.update(config)

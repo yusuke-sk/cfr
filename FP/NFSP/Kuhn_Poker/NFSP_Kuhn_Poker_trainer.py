@@ -80,6 +80,7 @@ class KuhnTrainer:
     for node, cn in self.N_count.items():
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
+
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
 
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
@@ -101,7 +102,6 @@ class KuhnTrainer:
 
 
       self.train_one_episode(history, iteration_t)
-
 
 
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
@@ -132,18 +132,8 @@ class KuhnTrainer:
         #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
 
-        # 挙動 check
-        #print(self.N_count)
-        #print(len(self.M_RL))
 
-        """
-        with torch.no_grad():
-          print("====", iteration_t, "====")
-          for node_X in self.N_count.keys():
-            eval_s_bit = torch.Tensor(self.make_state_bit(node_X))
-            eval_action = self.RL.action_step(eval_s_bit)
-            print(node_X, ":", eval_action)
-        """
+
 
 
   def random_seed_fix(self, random_seed):
@@ -228,6 +218,7 @@ class KuhnTrainer:
           self.epsilon_greedy_q_learning_strategy = {}
           for best_response_player_i in range(self.NUM_PLAYERS):
             self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
+
 
 
 

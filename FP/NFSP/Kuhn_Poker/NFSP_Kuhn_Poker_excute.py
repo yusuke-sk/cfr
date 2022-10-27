@@ -33,11 +33,11 @@ import NFSP_Kuhn_Poker_generate_data
 config = dict(
   random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
-  num_players = 4,
-  wandb_save = [True, False][0],
+  num_players = 2,
+  wandb_save = [True, False][1],
 
   #rl
-  rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][4]
+  rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
 )
 
 
