@@ -1,6 +1,7 @@
 
 # _________________________________ Library _________________________________
-from cmath import e
+
+from multiprocessing import Process, Queue
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -78,28 +79,35 @@ class KuhnTrainer:
     for node, cn in self.N_count.items():
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
-
+    memory_queue = Queue()
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
 
-      #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
-      self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
-      for player_i in range(self.NUM_PLAYERS):
-        if np.random.uniform() < self.eta:
-          self.sigma_strategy_bit[player_i] = 0
-        else:
-          self.sigma_strategy_bit[player_i] = 1
+      #parallel_agentがデータを習得する
+      process1 = Process(target=self.make_episodes, args=(1, memory_queue))
+      process1.start()
+      process1.join()
+
+      #学習 part
+      if self.game_step_count > self.step_per_learning_update:
+        if self.sl_algo == "mlp":
+          self.SL.SL_learn(self.M_SL, None, self.avg_strategy, iteration_t)
+        elif self.sl_algo == "cnt":
+          self.SL.SL_train_AVG(self.M_SL, None, self.avg_strategy, self.N_count)
+          self.M_SL = []
 
 
-
-      cards = self.card_distribution(self.NUM_PLAYERS)
-      random.shuffle(cards)
-      history = "".join(cards[:self.NUM_PLAYERS])
-
-
-      self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
+        if self.rl_algo != "dfs":
+          self.RL.rl_algo = self.rl_algo
+          self.RL.RL_learn(self.M_RL, None, self.epsilon_greedy_q_learning_strategy, iteration_t)
 
 
-      self.train_one_episode(history, iteration_t)
+        elif self.rl_algo == "dfs":
+          self.infoSets_dict = {}
+          for target_player in range(self.NUM_PLAYERS):
+            self.create_infoSets("", target_player, 1.0)
+          self.epsilon_greedy_q_learning_strategy = {}
+          for best_response_player_i in range(self.NUM_PLAYERS):
+            self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
@@ -129,6 +137,22 @@ class KuhnTrainer:
         #self.database_for_plot["iteration"].append(iteration_t)
         #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
+  def make_episodes(self, iteration_t, episode_num, memory):
+    for _ in range(episode_num):
+      #data 収集part
+      #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
+      self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
+      for player_i in range(self.NUM_PLAYERS):
+        if np.random.uniform() < self.eta:
+          self.sigma_strategy_bit[player_i] = 0
+        else:
+          self.sigma_strategy_bit[player_i] = 1
+
+      cards = self.card_distribution(self.NUM_PLAYERS)
+      random.shuffle(cards)
+      history = "".join(cards[:self.NUM_PLAYERS])
+      self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
+      self.train_one_episode(history, iteration_t)
 
 
 
@@ -141,7 +165,7 @@ class KuhnTrainer:
 
 
 # _________________________________ Train second main method _________________________________
-  def train_one_episode(self, history, iteration_t):
+  def train_one_episode(self, history):
 
     # one episode
     while  not self.whether_terminal_states(history):
@@ -194,30 +218,6 @@ class KuhnTrainer:
 
 
       self.game_step_count += 1
-
-      if self.game_step_count % self.step_per_learning_update == 0:
-
-        if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
-        elif self.sl_algo == "cnt":
-          self.SL.SL_train_AVG(self.M_SL, player, self.avg_strategy, self.N_count)
-          self.M_SL = []
-
-
-        if self.rl_algo != "dfs":
-          self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
-
-
-        elif self.rl_algo == "dfs":
-          self.infoSets_dict = {}
-          for target_player in range(self.NUM_PLAYERS):
-            self.create_infoSets("", target_player, 1.0)
-          self.epsilon_greedy_q_learning_strategy = {}
-          for best_response_player_i in range(self.NUM_PLAYERS):
-            self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
-
-
 
 
     if self.whether_terminal_states(history):
