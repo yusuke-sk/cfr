@@ -71,7 +71,7 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu'),
   #sql
-  rl_alpha = 1e+1,
+  rl_alpha = 1e+0,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
   alpha_discrease = [True, False][0],
   )

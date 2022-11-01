@@ -153,7 +153,6 @@ class ReinforcementLearning:
           inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
           q = self.deep_q_network.forward(inputs_eval)
           dist = F.softmax(q/self.alpha, dim=1)[0]
-          log_dist = torch.log(dist)
           #求めたいのは sum xlogx
           policy_entropy_s = torch.sum(torch.special.xlogy(-dist, dist))
           policy_entropy += policy_entropy_s
