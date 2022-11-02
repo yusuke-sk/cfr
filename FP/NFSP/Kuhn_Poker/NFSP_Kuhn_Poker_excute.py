@@ -33,13 +33,13 @@ import NFSP_Kuhn_Poker_generate_data
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**5,
+  iterations = 10**6,
   num_players = 2,
   wandb_save = [True, False][0],
   parallelized = [True, False][0],
 
   #rl
-  rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
+  rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][4]
 )
 
 
@@ -70,10 +70,15 @@ if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
   # device
   #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
   device = torch.device('cpu'),
+
   #sql
   rl_alpha = 1e+0,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
   alpha_discrease = [True, False][0],
+
+
+  #parallelized
+  batch_episode_num = 50
   )
 
   config.update(config_plus)
@@ -117,12 +122,15 @@ if config["wandb_save"]:
   if config["rl_algo"] == "sac":
     #wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
     wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
-  elif config["rl_algo"] == "sql":
-    wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+  #elif config["rl_algo"] == "sql":
+    #wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_A_{}_P_{}_NFSP".
+    #format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["parallelized"]))
     #wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
 
   else:
-    wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+    wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_P_{}_NFSP".
+    format(config["rl_algo"], config["sl_algo"], config["parallelized"]))
+
   wandb.config.update(config)
   wandb.define_metric("exploitability", summary="last")
   wandb.define_metric("avg_utility", summary="last")
@@ -138,6 +146,7 @@ if config["parallelized"]:
     num_players= config["num_players"],
     wandb_save = config["wandb_save"],
     step_per_learning_update = config["step_per_learning_update"],
+    batch_episode_num = config["batch_episode_num"],
     )
 
 else:

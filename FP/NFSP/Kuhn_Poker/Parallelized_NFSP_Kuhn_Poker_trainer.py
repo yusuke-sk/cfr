@@ -22,7 +22,7 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class KuhnTrainer:
-  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=50):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
@@ -33,10 +33,9 @@ class KuhnTrainer:
     self.memory_count_for_sl = 0
 
     self.random_seed = random_seed
-
     self.random_seed_fix(self.random_seed)
-
     self.step_per_learning_update = step_per_learning_update
+    self.batch_episode_num = batch_episode_num
 
 
 # _________________________________ Train main method _________________________________
@@ -70,7 +69,7 @@ class KuhnTrainer:
 
     self.epsilon_greedy_q_learning_strategy = copy.deepcopy(self.avg_strategy)
 
-    self.game_step_count = 0
+
     self.RL = rl_module
     self.SL = sl_module
     self.GD = gd_module
@@ -80,38 +79,25 @@ class KuhnTrainer:
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
 
-    for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
+    for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
-      self.make_episodes(50)
+      #1 iteraion = 1episode を守る
+      iteration_t *= self.batch_episode_num
 
-      #学習 part
-      if self.game_step_count > self.step_per_learning_update:
-        if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
-        elif self.sl_algo == "cnt":
-          self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
-          self.M_SL = []
+      #エピソード作成
+      self.make_episodes(self.batch_episode_num)
 
+      #学習
+      self.SL_and_RL_learn(iteration_t)
 
-        if self.rl_algo != "dfs":
-          self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
+      #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
+      exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num
+      for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
 
 
-        elif self.rl_algo == "dfs":
-          self.infoSets_dict = {}
-          for target_player in range(self.NUM_PLAYERS):
-            self.create_infoSets("", target_player, 1.0)
-          self.epsilon_greedy_q_learning_strategy = {}
-          for best_response_player_i in range(self.NUM_PLAYERS):
-            self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
-
-
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in  exploitability_check_t :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
-
-
         self.optimality_gap = 0
         self.infoSets_dict = {}
         for target_player in range(self.NUM_PLAYERS):
@@ -134,6 +120,27 @@ class KuhnTrainer:
         #self.database_for_plot["iteration"].append(iteration_t)
         #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
+
+
+  def SL_and_RL_learn(self, iteration_t):
+    if self.sl_algo == "mlp":
+      self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
+    elif self.sl_algo == "cnt":
+      self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
+      self.M_SL = []
+
+    #強化学習
+    if self.rl_algo != "dfs":
+      self.RL.rl_algo = self.rl_algo
+      self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
+
+    elif self.rl_algo == "dfs":
+      self.infoSets_dict = {}
+      for target_player in range(self.NUM_PLAYERS):
+        self.create_infoSets("", target_player, 1.0)
+      self.epsilon_greedy_q_learning_strategy = {}
+      for best_response_player_i in range(self.NUM_PLAYERS):
+        self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
   def make_episodes(self,episode_num):
@@ -214,9 +221,6 @@ class KuhnTrainer:
           self.reservior_add(self.M_SL,sa_bit)
         else:
           self.reservior_add(self.M_SL,(s, a))
-
-
-      self.game_step_count += 1
 
 
     if self.whether_terminal_states(history):
