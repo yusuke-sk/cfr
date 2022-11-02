@@ -79,7 +79,7 @@ class ReinforcementLearning:
     self.update_count =  0
 
 
-  def RL_learn(self, memory, target_player, update_strategy, k):
+  def RL_learn(self, memory, update_strategy, k):
 
     self.deep_q_network.train()
     self.deep_q_network_target.eval()
@@ -147,6 +147,7 @@ class ReinforcementLearning:
     if self.kuhn_trainer.wandb_save and self.save_count % 100 == 0:
 
       #方策エントロピーの平均を算出
+      """
       policy_entropy = 0
       with torch.no_grad():
         for node_X , _ in update_strategy.items():
@@ -156,9 +157,10 @@ class ReinforcementLearning:
           #求めたいのは sum xlogx
           policy_entropy_s = torch.sum(torch.special.xlogy(-dist, dist))
           policy_entropy += policy_entropy_s
+      wandb.log({'iteration': k, 'loss_rl':  np.mean(total_loss),'policy_entropy':policy_entropy})
+      """
+      wandb.log({'iteration': k, 'loss_rl':  np.mean(total_loss)})
 
-      wandb.log({'iteration': k, 'loss_rl_{}'.format(target_player):  np.mean(total_loss),
-      'policy_entropy':policy_entropy})
 
 
 

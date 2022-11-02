@@ -148,7 +148,7 @@ class ReinforcementLearning:
 
 
 
-  def RL_learn(self, memory, target_player, update_strategy, k):
+  def RL_learn(self, memory, update_strategy, k):
 
     for _ in range(self.epochs):
       samples = random.sample(memory, min(self.sampling_num, len(memory)))

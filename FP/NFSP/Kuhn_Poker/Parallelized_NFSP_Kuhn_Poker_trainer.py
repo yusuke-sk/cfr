@@ -79,26 +79,23 @@ class KuhnTrainer:
     for node, cn in self.N_count.items():
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
-    memory_queue = Queue()
+
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
 
-      #parallel_agentがデータを習得する
-      process1 = Process(target=self.make_episodes, args=(1, memory_queue))
-      process1.start()
-      process1.join()
+      self.make_episodes(50)
 
       #学習 part
       if self.game_step_count > self.step_per_learning_update:
         if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, None, self.avg_strategy, iteration_t)
+          self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
         elif self.sl_algo == "cnt":
-          self.SL.SL_train_AVG(self.M_SL, None, self.avg_strategy, self.N_count)
+          self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
           self.M_SL = []
 
 
         if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, None, self.epsilon_greedy_q_learning_strategy, iteration_t)
+          self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
 
 
         elif self.rl_algo == "dfs":
@@ -137,7 +134,9 @@ class KuhnTrainer:
         #self.database_for_plot["iteration"].append(iteration_t)
         #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
-  def make_episodes(self, iteration_t, episode_num, memory):
+
+
+  def make_episodes(self,episode_num):
     for _ in range(episode_num):
       #data 収集part
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
@@ -152,7 +151,7 @@ class KuhnTrainer:
       random.shuffle(cards)
       history = "".join(cards[:self.NUM_PLAYERS])
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
-      self.train_one_episode(history, iteration_t)
+      self.train_one_episode(history)
 
 
 

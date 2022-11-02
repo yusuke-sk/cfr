@@ -200,15 +200,15 @@ class KuhnTrainer:
       if self.game_step_count % self.step_per_learning_update == 0:
 
         if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
+          self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
         elif self.sl_algo == "cnt":
-          self.SL.SL_train_AVG(self.M_SL, player, self.avg_strategy, self.N_count)
+          self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
           self.M_SL = []
 
 
         if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
+          self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
 
 
         elif self.rl_algo == "dfs":

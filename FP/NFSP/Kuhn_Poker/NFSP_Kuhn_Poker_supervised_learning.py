@@ -91,7 +91,7 @@ class SupervisedLearning:
 
 
 
-  def SL_learn(self, memory, target_player, update_strategy, iteration_t):
+  def SL_learn(self, memory, update_strategy, iteration_t):
     self.sl_network.train()
 
     total_loss = []
@@ -158,7 +158,7 @@ class SupervisedLearning:
     return self.new_memory
 
 
-  def SL_train_AVG(self, memory, target_player, strategy, n_count):
+  def SL_train_AVG(self, memory, strategy, n_count):
 
 
     for one_s_a_set in memory:
