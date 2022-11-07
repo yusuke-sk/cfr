@@ -79,21 +79,6 @@ class KuhnTrainer:
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
     #並列化の準備
-    ray.init()
-    self.parallel_agent_num = 3
-    self.dc_agents = [DC_Agent.remote(
-      agent_id =i,
-      eta = self.eta,
-      rl_algo = self.rl_algo,
-      sl_algo = self.sl_algo,
-      memory_size_sl = self.memory_size_sl,
-      memory_size_rl = self.memory_size_rl,
-      train_iterations = self.train_iterations,
-      num_players = self.NUM_PLAYERS,
-      avg_strategy = self.avg_strategy,
-      random_seed = self.random_seed,
-      ) for i in range(self.parallel_agent_num)]
-
     for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
       #1 iteraion = 1episode を守る
@@ -101,9 +86,9 @@ class KuhnTrainer:
 
       #エピソード作成 ()
       self.make_episodes_paralleled(self.batch_episode_num)
-
       #学習
       self.SL_and_RL_learn(iteration_t)
+
 
       #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
       exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num
@@ -158,15 +143,29 @@ class KuhnTrainer:
         self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
+  #並列化のagentで割って作る
   def make_episodes_paralleled(self,episode_num):
-    #並列化のagentで割って作る
-    data_rep_object_id = [self.dc_agents[i].make_episodes.remote(episode_num//self.parallel_agent_num) for i in range(self.parallel_agent_num)]
 
-    data_list = ray.get(data_rep_object_id)
+    queue_SL1, queue_RL1 = Queue(), Queue()
+    process1 = Process(target=self.make_episodes, args=(episode_num, queue_SL1, queue_RL1))
+    process1.start()
+    process1.join()
+
+
+    while not queue_RL1.empty():
+      self.M_RL.append(queue_RL1.get())
+    while not queue_SL1.empty():
+      self.reservior_add(self.M_SL,queue_SL1.get())
 
 
 
-  def make_one_episode(self):
+
+  def make_episodes(self, num, queue_ML, queue_RL):
+    for ii in range(num):
+      self.make_one_episode(queue_ML, queue_RL)
+
+
+  def make_one_episode(self, queue_ML, queue_RL):
     #data 収集part
     #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
     self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
@@ -180,7 +179,7 @@ class KuhnTrainer:
     random.shuffle(cards)
     history = "".join(cards[:self.NUM_PLAYERS])
     self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
-    self.train_one_episode(history)
+    self.train_one_episode(history, queue_ML, queue_RL)
 
 
 
@@ -191,7 +190,7 @@ class KuhnTrainer:
 
 
 # _________________________________ Train second main method _________________________________
-  def train_one_episode(self, history):
+  def train_one_episode(self, history, queue_SL, queue_RL):
 
     # one episode
     while  not self.whether_terminal_states(history):
@@ -207,7 +206,8 @@ class KuhnTrainer:
 
         sars_list = self.make_sars_list(self.player_sars_list[player])
 
-        self.M_RL.append(sars_list)
+        #self.M_RL.append(sars_list)
+        queue_RL.put(sars_list)
         self.player_sars_list[player] = {"s":None, "a":None, "r":None, "s_prime":None}
 
 
@@ -238,9 +238,11 @@ class KuhnTrainer:
       if self.sigma_strategy_bit[player] == 0:
         if self.sl_algo == "mlp":
           sa_bit = self.from_episode_to_bit([(s, a)])
-          self.reservior_add(self.M_SL,sa_bit)
+          #self.reservior_add(self.M_SL,sa_bit)
+          queue_SL.put(sa_bit)
         else:
-          self.reservior_add(self.M_SL,(s, a))
+          #self.reservior_add(self.M_SL,(s, a))
+          queue_SL.put((s, a))
 
 
     if self.whether_terminal_states(history):
@@ -249,7 +251,8 @@ class KuhnTrainer:
         self.player_sars_list[target_player_i]["r"] = r
 
         sars_list = self.make_sars_list(self.player_sars_list[target_player_i])
-        self.M_RL.append(sars_list)
+        #self.M_RL.append(sars_list)
+        queue_RL.put(sars_list)
 
         self.player_sars_list[target_player_i] = {"s":None, "a":None, "r":None, "s_prime":None}
 
@@ -586,36 +589,6 @@ class KuhnTrainer:
           X_bit[(self.NUM_PLAYERS+1) + 2*idx +1] = 1
 
     return X_bit
-
-
-## data collect Agent ## KuhnTrainerを継承
-@ray.remote
-class DC_Agent(KuhnTrainer):
-    def __init__(self, agent_id, eta, rl_algo , sl_algo ,memory_size_sl, memory_size_rl, train_iterations,num_players, avg_strategy,
-    random_seed):
-        self.agent_id = agent_id
-        self.eta = eta
-        self.NUM_PLAYERS = num_players
-        self.NUM_ACTIONS = 2
-        self.avg_strategy = avg_strategy
-        self.rl_algo = rl_algo
-        self.sl_algo = sl_algo
-        self.card_rank = self.make_rank()
-        self.memory_count_for_sl = 0
-        self.random_seed = random_seed
-        self.random_seed_fix(self.random_seed)
-        self.STATE_BIT_LEN = (self.NUM_PLAYERS + 1) + 2*(self.NUM_PLAYERS *2 - 2)
-        self.memory_size_rl = memory_size_rl
-        self.memory_size_sl = memory_size_sl
-
-        self.M_SL = []
-        self.M_RL = deque([], maxlen=self.memory_size_rl)
-
-
-    def make_episodes(self, episodes_num):
-        #episode_num分のデータ作成
-        for _ in range(episodes_num):
-          self.make_one_episode()
 
 
 
