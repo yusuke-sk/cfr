@@ -143,19 +143,30 @@ class KuhnTrainer:
         self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
-  #並列化のagentで割って作る
+  #並列化のagentで割って作る #very imortant part for parallelization
   def make_episodes_paralleled(self,episode_num):
 
     queue_SL1, queue_RL1 = Queue(), Queue()
-    process1 = Process(target=self.make_episodes, args=(episode_num, queue_SL1, queue_RL1))
+    process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL1, queue_RL1))
+
+    queue_SL2, queue_RL2 = Queue(), Queue()
+    process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL1, queue_RL1))
+
     process1.start()
+    process2.start()
     process1.join()
+    process2.join()
 
 
     while not queue_RL1.empty():
       self.M_RL.append(queue_RL1.get())
     while not queue_SL1.empty():
       self.reservior_add(self.M_SL,queue_SL1.get())
+
+    while not queue_RL2.empty():
+      self.M_RL.append(queue_RL2.get())
+    while not queue_SL2.empty():
+      self.reservior_add(self.M_SL,queue_SL2.get())
 
 
 
