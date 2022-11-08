@@ -143,6 +143,7 @@ class KuhnTrainer:
 
 
   def make_episodes(self,episode_num):
+    start_time = time.time()
     for _ in range(episode_num):
       #data 収集part
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
@@ -158,6 +159,9 @@ class KuhnTrainer:
       history = "".join(cards[:self.NUM_PLAYERS])
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
       self.train_one_episode(history)
+
+    end_time = time.time()
+    print(end_time - start_time, episode_num)
 
 
 

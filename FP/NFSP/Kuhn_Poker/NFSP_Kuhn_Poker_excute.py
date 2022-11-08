@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
 
     #parallelized
-    batch_episode_num = 50
+    batch_episode_num = 100
     )
 
     config.update(config_plus)
@@ -172,6 +172,7 @@ if __name__ == '__main__':
       num_players= config["num_players"],
       wandb_save = config["wandb_save"],
       step_per_learning_update = config["step_per_learning_update"],
+      batch_episode_num = config["batch_episode_num"],
       )
 
   elif config["parallelized"] == False and config["collect_step_or_episode"] == "episode":
@@ -181,6 +182,7 @@ if __name__ == '__main__':
       num_players= config["num_players"],
       wandb_save = config["wandb_save"],
       step_per_learning_update = config["step_per_learning_update"],
+      batch_episode_num = config["batch_episode_num"],
       )
 
 
