@@ -36,10 +36,10 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**4,
+    iterations = 10**5,
     num_players = 5,
     wandb_save = [True, False][1],
-    parallelized = ["Ray", "MP", False][1],
+    parallelized = ["Ray", "MP", False][2],
     collect_step_or_episode = ["step", "episode"][1],
 
     #rl
@@ -123,8 +123,9 @@ if __name__ == '__main__':
 
   if config["wandb_save"]:
     #並列化の実験用
-    if config["parallelized"] == "Ray" or  config["parallelized"] ==  "MP":
-      wandb.init(project="Kuhn_Poker_trained_Parallel", name="{}_NFSP".format(config["parallelized"]))
+    if config["parallelized"] == "Ray" or  config["parallelized"] ==  "MP" or  config["parallelized"] ==  False :
+      wandb.init(project="Kuhn_Poker_trained_Parallel_{}players".format(config["num_players"])
+      , name="{}_NFSP".format(config["parallelized"]))
     #wandb.init(project="Kuhn_Poker_n_players", name="{}_players_NFSP".format(config["num_players"]))
     elif config["rl_algo"] == "sac":
       #wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))

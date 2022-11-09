@@ -146,9 +146,10 @@ class KuhnTrainer:
   #並列化のagentで割って作る #very imortant part for parallelization
   def make_episodes_paralleled(self,episode_num):
 
-    a = time.time()
+    #a = time.time()
     #50episode 作成するのに about 1.2s かかっている
     queue_SL, queue_RL = Queue(), Queue()
+
     process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
     process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
 
@@ -166,7 +167,7 @@ class KuhnTrainer:
       for data_SL in queue_SL.get():
         self.M_SL.append(data_SL)
 
-    print(time.time() - a)
+    #print(time.time() - a)
     #print(len(self.M_RL), len(self.M_SL))
 
 
@@ -180,7 +181,6 @@ class KuhnTrainer:
 
     queue_RL.put(list_RL)
     queue_SL.put(list_SL)
-
 
 
 

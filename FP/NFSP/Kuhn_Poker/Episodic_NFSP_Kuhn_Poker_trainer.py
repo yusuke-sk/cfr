@@ -84,15 +84,23 @@ class KuhnTrainer:
       iteration_t *= self.batch_episode_num
 
       #エピソード作成
+      start_time = time.time()
       self.make_episodes(self.batch_episode_num)
+      end_time = time.time()
+      #print(end_time - start_time)
 
       #学習
+      start_time = time.time()
       self.SL_and_RL_learn(iteration_t)
+      end_time = time.time()
+      print(end_time - start_time)
+
 
       #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
       exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num
       for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
 
+      #exploitability_check_t = []
 
       if iteration_t in  exploitability_check_t :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
@@ -143,7 +151,7 @@ class KuhnTrainer:
 
 
   def make_episodes(self,episode_num):
-    start_time = time.time()
+
     for _ in range(episode_num):
       #data 収集part
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
@@ -160,8 +168,7 @@ class KuhnTrainer:
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
       self.train_one_episode(history)
 
-    end_time = time.time()
-    print(end_time - start_time, episode_num)
+
 
 
 
