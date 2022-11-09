@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
 
     #parallelized
-    batch_episode_num = 100
+    batch_episode_num = 500
     )
 
     config.update(config_plus)

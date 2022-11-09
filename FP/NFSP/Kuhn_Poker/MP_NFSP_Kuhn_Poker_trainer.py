@@ -148,38 +148,52 @@ class KuhnTrainer:
 
     a = time.time()
     #50episode 作成するのに about 1.2s かかっている
-    queue_SL1, queue_RL1 = Queue(), Queue()
-    process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL1, queue_RL1))
-
-    queue_SL2, queue_RL2 = Queue(), Queue()
-    process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL1, queue_RL1))
+    queue_SL, queue_RL = Queue(), Queue()
+    process1 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
+    process2 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
+    process3 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
+    process4 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
+    process5 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
 
     process1.start()
     process2.start()
+    process3.start()
+    process4.start()
+    process5.start()
+
     process1.join()
     process2.join()
+    process3.join()
+    process4.join()
+    process5.join()
+
+    while not queue_RL.empty():
+      for data_RL in queue_RL.get():
+        self.M_RL.append(data_RL)
+
+    while not queue_SL.empty():
+      for data_SL in queue_SL.get():
+        self.M_SL.append(data_SL)
+
     print(time.time() - a)
-
-    # dataの移し替え about 0.0014s (そんなに時間かかっていない)
-    while not queue_RL1.empty():
-      self.M_RL.append(queue_RL1.get())
-    while not queue_SL1.empty():
-      self.reservior_add(self.M_SL,queue_SL1.get())
-
-    while not queue_RL2.empty():
-      self.M_RL.append(queue_RL2.get())
-    while not queue_SL2.empty():
-      self.reservior_add(self.M_SL,queue_SL2.get())
+    print(len(self.M_RL), len(self.M_SL))
 
 
 
-
-  def make_episodes(self, num, queue_ML, queue_RL):
+  def make_episodes(self, num, queue_SL, queue_RL):
+    list_SL = []
+    list_RL = []
     for ii in range(num):
-      self.make_one_episode(queue_ML, queue_RL)
+      #self.make_one_episode(queue_SL, queue_RL)
+      self.make_one_episode(list_SL, list_RL)
+
+    queue_RL.put(list_RL)
+    queue_SL.put(list_SL)
 
 
-  def make_one_episode(self, queue_ML, queue_RL):
+
+
+  def make_one_episode(self, queue_SL, queue_RL):
     #data 収集part
     #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
     self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
@@ -193,7 +207,7 @@ class KuhnTrainer:
     random.shuffle(cards)
     history = "".join(cards[:self.NUM_PLAYERS])
     self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
-    self.train_one_episode(history, queue_ML, queue_RL)
+    self.train_one_episode(history, queue_SL, queue_RL)
 
 
 
@@ -221,7 +235,9 @@ class KuhnTrainer:
         sars_list = self.make_sars_list(self.player_sars_list[player])
 
         #self.M_RL.append(sars_list)
-        queue_RL.put(sars_list)
+        #queue_RL.put(sars_list)
+        queue_RL.append(sars_list)
+
         self.player_sars_list[player] = {"s":None, "a":None, "r":None, "s_prime":None}
 
 
@@ -253,10 +269,13 @@ class KuhnTrainer:
         if self.sl_algo == "mlp":
           sa_bit = self.from_episode_to_bit([(s, a)])
           #self.reservior_add(self.M_SL,sa_bit)
-          queue_SL.put(sa_bit)
+          #queue_SL.put(sa_bit)
+          queue_SL.append(sa_bit)
+
         else:
           #self.reservior_add(self.M_SL,(s, a))
-          queue_SL.put((s, a))
+          #queue_SL.put((s, a))
+          queue_SL.append(sa_bit)
 
 
     if self.whether_terminal_states(history):
@@ -266,7 +285,8 @@ class KuhnTrainer:
 
         sars_list = self.make_sars_list(self.player_sars_list[target_player_i])
         #self.M_RL.append(sars_list)
-        queue_RL.put(sars_list)
+        #queue_RL.put(sars_list)
+        queue_RL.append(sars_list)
 
         self.player_sars_list[target_player_i] = {"s":None, "a":None, "r":None, "s_prime":None}
 
