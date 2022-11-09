@@ -149,23 +149,14 @@ class KuhnTrainer:
     a = time.time()
     #50episode 作成するのに about 1.2s かかっている
     queue_SL, queue_RL = Queue(), Queue()
-    process1 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
-    process2 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
-    process3 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
-    process4 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
-    process5 = Process(target=self.make_episodes, args=(episode_num//5, queue_SL, queue_RL))
+    process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
+    process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
 
     process1.start()
     process2.start()
-    process3.start()
-    process4.start()
-    process5.start()
 
     process1.join()
     process2.join()
-    process3.join()
-    process4.join()
-    process5.join()
 
     while not queue_RL.empty():
       for data_RL in queue_RL.get():
@@ -176,7 +167,7 @@ class KuhnTrainer:
         self.M_SL.append(data_SL)
 
     print(time.time() - a)
-    print(len(self.M_RL), len(self.M_SL))
+    #print(len(self.M_RL), len(self.M_SL))
 
 
 

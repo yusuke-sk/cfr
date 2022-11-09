@@ -37,9 +37,9 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**4,
-    num_players = 2,
+    num_players = 5,
     wandb_save = [True, False][1],
-    parallelized = ["Ray", "MP", False][2],
+    parallelized = ["Ray", "MP", False][1],
     collect_step_or_episode = ["step", "episode"][1],
 
     #rl
@@ -82,7 +82,7 @@ if __name__ == '__main__':
 
 
     #parallelized
-    batch_episode_num = 500
+    batch_episode_num = 100
     )
 
     config.update(config_plus)
