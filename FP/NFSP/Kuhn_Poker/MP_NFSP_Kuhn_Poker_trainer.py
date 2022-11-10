@@ -22,7 +22,8 @@ import ray
 
 # _________________________________ Train class _________________________________
 class KuhnTrainer:
-  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=50):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=50
+  , whether_accurate_exploitability = True):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
@@ -36,6 +37,7 @@ class KuhnTrainer:
     self.random_seed_fix(self.random_seed)
     self.step_per_learning_update = step_per_learning_update
     self.batch_episode_num = batch_episode_num
+    self.whether_accurate_exploitability = whether_accurate_exploitability
 
 
 # _________________________________ Train main method _________________________________
@@ -95,31 +97,56 @@ class KuhnTrainer:
       for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
 
 
-      if iteration_t in  exploitability_check_t :
-        self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
-        self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
-        self.optimality_gap = 0
-        self.infoSets_dict = {}
-        for target_player in range(self.NUM_PLAYERS):
-          self.create_infoSets("", target_player, 1.0)
-        self.best_response_strategy_dfs = {}
-        for best_response_player_i in range(self.NUM_PLAYERS):
-          self.calc_best_response_value(self.best_response_strategy_dfs, best_response_player_i, "", 1)
-
-        for player_i in range(self.NUM_PLAYERS):
-          self.optimality_gap_i = 1/2 * (self.GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy_dfs, self.avg_strategy, player_i)
-           - self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i))
+      if iteration_t in exploitability_check_t :
+        self.calculate_evalation_values(iteration_t)
 
 
-          self.optimality_gap += self.optimality_gap_i
+  def calculate_evalation_values(self, iteration_t):
+    #self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
+    self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
-        if self.wandb_save:
-          wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap, "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
+    if self.whether_accurate_exploitability:
+      self.optimal_gap, self.dfs_exploitability , self.current_br_exploitability = self.get_exploitability_and_optimal_gap()
+      self.exploitability_list[iteration_t] = self.dfs_exploitability
 
-        #追加 matplotlibで図を書くため
-        #self.database_for_plot["iteration"].append(iteration_t)
-        #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
+      if self.wandb_save:
+        wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimal_gap, "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
 
+    else:
+      self.current_br_exploitability = self.get_current_br_exploitability()
+      self.exploitability_list[iteration_t] = self.current_br_exploitability
+
+      if self.wandb_save:
+        wandb.log({'iteration': iteration_t, 'pseudo_exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t],  "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
+
+    #追加 matplotlibで図を書くため
+    #self.database_for_plot["iteration"].append(iteration_t)
+    #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
+
+  def get_exploitability_and_optimal_gap(self):
+    optimality_gap = 0
+    self.infoSets_dict = {}
+    for target_player in range(self.NUM_PLAYERS):
+      self.create_infoSets("", target_player, 1.0)
+    self.best_response_strategy_dfs = {}
+    for best_response_player_i in range(self.NUM_PLAYERS):
+      self.calc_best_response_value(self.best_response_strategy_dfs, best_response_player_i, "", 1)
+
+    dfs_exploitability = 0
+    current_br_exploitability = 0
+    for player_i in range(self.NUM_PLAYERS):
+        dfs_exploitability +=  self.GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy_dfs, self.avg_strategy, player_i)
+        current_br_exploitability += self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i)
+
+    optimality_gap = 1/self.NUM_PLAYERS * (dfs_exploitability - current_br_exploitability)
+    assert optimality_gap >= 0
+    return optimality_gap , dfs_exploitability, current_br_exploitability
+
+  def get_current_br_exploitability(self):
+    current_br_exploitability = 0
+    for player_i in range(self.NUM_PLAYERS):
+      current_br_exploitability += self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i)
+    return current_br_exploitability
 
 
   def SL_and_RL_learn(self, iteration_t):

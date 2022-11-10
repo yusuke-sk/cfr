@@ -36,11 +36,15 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**5,
+    iterations = 10**6,
     num_players = 5,
-    wandb_save = [True, False][1],
+    wandb_save = [True, False][0],
     parallelized = ["Ray", "MP", False][2],
-    collect_step_or_episode = ["step", "episode"][1],
+    collect_step_or_episode = ["step", "episode"][0],
+
+    #parallelized
+    batch_episode_num = 100,
+    whether_accurate_exploitability = False,
 
     #rl
     rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
@@ -79,10 +83,6 @@ if __name__ == '__main__':
     rl_alpha = 1e+0,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
     alpha_discrease = [True, False][0],
-
-
-    #parallelized
-    batch_episode_num = 100
     )
 
     config.update(config_plus)
@@ -123,21 +123,19 @@ if __name__ == '__main__':
 
   if config["wandb_save"]:
     #並列化の実験用
-    if config["parallelized"] == "Ray" or  config["parallelized"] ==  "MP" or  config["parallelized"] ==  False :
+    if config["parallelized"] == "Ray" or  config["parallelized"] ==  "MP"  :
       wandb.init(project="Kuhn_Poker_trained_Parallel_{}players".format(config["num_players"])
       , name="{}_NFSP".format(config["parallelized"]))
-    #wandb.init(project="Kuhn_Poker_n_players", name="{}_players_NFSP".format(config["num_players"]))
     elif config["rl_algo"] == "sac":
-      #wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
-      wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
+      wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
     #elif config["rl_algo"] == "sql":
       #wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_A_{}_P_{}_NFSP".
       #format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["parallelized"]))
       #wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
 
     else:
-      wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_P_{}_NFSP".
-      format(config["rl_algo"], config["sl_algo"], config["parallelized"]))
+      wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"],
+      config["collect_step_or_episode"]))
 
     wandb.config.update(config)
     wandb.define_metric("exploitability", summary="last")
@@ -164,6 +162,7 @@ if __name__ == '__main__':
       wandb_save = config["wandb_save"],
       step_per_learning_update = config["step_per_learning_update"],
       batch_episode_num = config["batch_episode_num"],
+      whether_accurate_exploitability = config["whether_accurate_exploitability"],
       )
 
   elif config["parallelized"] == False and config["collect_step_or_episode"] == "step":
@@ -173,7 +172,7 @@ if __name__ == '__main__':
       num_players= config["num_players"],
       wandb_save = config["wandb_save"],
       step_per_learning_update = config["step_per_learning_update"],
-      batch_episode_num = config["batch_episode_num"],
+      whether_accurate_exploitability = config["whether_accurate_exploitability"],
       )
 
   elif config["parallelized"] == False and config["collect_step_or_episode"] == "episode":
@@ -184,6 +183,7 @@ if __name__ == '__main__':
       wandb_save = config["wandb_save"],
       step_per_learning_update = config["step_per_learning_update"],
       batch_episode_num = config["batch_episode_num"],
+      whether_accurate_exploitability = config["whether_accurate_exploitability"],
       )
 
 
