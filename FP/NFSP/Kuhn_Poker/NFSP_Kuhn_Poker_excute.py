@@ -36,15 +36,13 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 2,
+    num_players = 6,
+    #parallelized
+    batch_episode_num = [40, 30, 20, 20, 15][6-2],
     wandb_save = [True, False][1],
     parallelized = ["MP", False][1],
     collect_step_or_episode = ["step", "episode"][1],
-
-    #parallelized
-    batch_episode_num = 20,
     whether_accurate_exploitability =[True, False, "Dont_calculate"][2],
-
     #rl
     rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
   )

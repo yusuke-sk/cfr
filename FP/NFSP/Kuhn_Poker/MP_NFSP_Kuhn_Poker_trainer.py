@@ -17,7 +17,7 @@ import wandb
 
 import torch
 import torch.nn as nn
-import ray
+
 
 
 # _________________________________ Train class _________________________________
@@ -67,7 +67,7 @@ class KuhnTrainer:
 
     #calculate random strategy exploitability
     #self.random_strategy_exploitability = self.get_exploitability_dfs()
-    self.random_strategy_exploitability = [0.916, 2.063, 3.476, 5.011][self.NUM_PLAYERS - 2]
+    self.random_strategy_exploitability = [0.916, 2.063, 3.476, 5.011, 6.631][self.NUM_PLAYERS - 2]
 
     self.epsilon_greedy_q_learning_strategy = copy.deepcopy(self.avg_strategy)
 
