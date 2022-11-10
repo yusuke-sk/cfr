@@ -105,7 +105,10 @@ class KuhnTrainer:
     #self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
     self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
-    if self.whether_accurate_exploitability:
+    if self.whether_accurate_exploitability == "Dont_calculate":
+      return
+
+    elif self.whether_accurate_exploitability:
       self.optimal_gap, self.dfs_exploitability , self.current_br_exploitability = self.get_exploitability_and_optimal_gap()
       self.exploitability_list[iteration_t] = self.dfs_exploitability
 

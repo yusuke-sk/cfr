@@ -35,15 +35,15 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**5,
+    iterations = 10**6,
     num_players = 2,
     wandb_save = [True, False][1],
     parallelized = ["MP", False][1],
-    collect_step_or_episode = ["step", "episode"][0],
+    collect_step_or_episode = ["step", "episode"][1],
 
     #parallelized
-    batch_episode_num = 100,
-    whether_accurate_exploitability = False,
+    batch_episode_num = 20,
+    whether_accurate_exploitability =[True, False, "Dont_calculate"][2],
 
     #rl
     rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
@@ -253,7 +253,7 @@ if __name__ == '__main__':
 
   # _________________________________ result _________________________________
 
-  if not config["wandb_save"]:
+  if not config["wandb_save"] and config["whether_accurate_exploitability"]!= "Dont_calculate":
     print("avg_utility", list(kuhn_trainer.avg_utility_list.items())[-1])
     print("final_exploitability", list(kuhn_trainer.exploitability_list.items())[-1])
 

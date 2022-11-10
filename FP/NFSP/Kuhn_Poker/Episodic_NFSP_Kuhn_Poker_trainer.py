@@ -112,16 +112,23 @@ class KuhnTrainer:
     #self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
     self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
-    if self.whether_accurate_exploitability:
+    if self.whether_accurate_exploitability == "Dont_calculate":
+      return
+
+    elif self.whether_accurate_exploitability:
       self.optimal_gap, self.dfs_exploitability , self.current_br_exploitability = self.get_exploitability_and_optimal_gap()
       self.exploitability_list[iteration_t] = self.dfs_exploitability
+
 
       if self.wandb_save:
         wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimal_gap, "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
 
     else:
+      start_time = time.time()
       self.current_br_exploitability = self.get_current_br_exploitability()
       self.exploitability_list[iteration_t] = self.current_br_exploitability
+      end_time = time.time()
+      #print(end_time-start_time)
 
       if self.wandb_save:
         wandb.log({'iteration': iteration_t, 'pseudo_exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t],  "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
@@ -129,6 +136,7 @@ class KuhnTrainer:
     #追加 matplotlibで図を書くため
     #self.database_for_plot["iteration"].append(iteration_t)
     #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
+
 
   def get_exploitability_and_optimal_gap(self):
     optimality_gap = 0
@@ -148,6 +156,7 @@ class KuhnTrainer:
     optimality_gap = 1/self.NUM_PLAYERS * (dfs_exploitability - current_br_exploitability)
     assert optimality_gap >= 0
     return optimality_gap , dfs_exploitability, current_br_exploitability
+
 
   def get_current_br_exploitability(self):
     current_br_exploitability = 0
