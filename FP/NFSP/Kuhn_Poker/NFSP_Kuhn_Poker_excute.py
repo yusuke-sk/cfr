@@ -23,7 +23,8 @@ from collections import deque
 
 import NFSP_Kuhn_Poker_trainer
 import Episodic_NFSP_Kuhn_Poker_trainer
-import MP_NFSP_Kuhn_Poker_trainer
+import DC_NFSP_Kuhn_Poker_trainer
+import SU_NFSP_Kuhn_Poker_trainer
 import NFSP_Kuhn_Poker_supervised_learning
 import NFSP_Kuhn_Poker_reinforcement_learning_DQN
 import NFSP_Kuhn_Poker_reinforcement_learning_SAC
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][6-2],
     wandb_save = [True, False][1],
-    parallelized = ["MP", False][1],
+    parallelized = ["DataCollect","StrategyUpdate", False][2],
     collect_step_or_episode = ["step", "episode"][1],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][2],
     #rl
@@ -120,7 +121,7 @@ if __name__ == '__main__':
 
   if config["wandb_save"]:
     #並列化の実験用
-    if config["parallelized"] ==  "MP"  :
+    if config["parallelized"] ==  "DataCollect" or   config["parallelized"] ==  "StrategyUpdate":
       wandb.init(project="Kuhn_Poker_trained_Parallel_{}players".format(config["num_players"])
       , name="{}_NFSP".format(config["parallelized"]))
     elif config["rl_algo"] == "sac":
@@ -141,8 +142,19 @@ if __name__ == '__main__':
 
 
   # _________________________________ train _________________________________
-  if config["parallelized"] == "MP":
-    kuhn_trainer = MP_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
+  if config["parallelized"] == "DataCollect":
+    kuhn_trainer = DC_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
+      random_seed = config["random_seed"],
+      train_iterations = config["iterations"],
+      num_players= config["num_players"],
+      wandb_save = config["wandb_save"],
+      step_per_learning_update = config["step_per_learning_update"],
+      batch_episode_num = config["batch_episode_num"],
+      whether_accurate_exploitability = config["whether_accurate_exploitability"],
+      )
+
+  elif config["parallelized"] == "StrategyUpdate":
+    kuhn_trainer = SU_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
       random_seed = config["random_seed"],
       train_iterations = config["iterations"],
       num_players= config["num_players"],
