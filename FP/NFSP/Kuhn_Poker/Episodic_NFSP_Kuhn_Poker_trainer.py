@@ -167,6 +167,7 @@ class KuhnTrainer:
 
 
   def SL_and_RL_learn(self, iteration_t):
+    start_time = time.time()
     if self.sl_algo == "mlp":
       self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
     elif self.sl_algo == "cnt":
@@ -185,6 +186,8 @@ class KuhnTrainer:
       self.epsilon_greedy_q_learning_strategy = {}
       for best_response_player_i in range(self.NUM_PLAYERS):
         self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
+    end_time = time.time()
+    print(end_time-start_time)
 
 
   def make_episodes(self,episode_num):

@@ -1,6 +1,6 @@
 # _________________________________ Library _________________________________
 
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Manager
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -29,7 +29,6 @@ class KuhnTrainer:
     self.STATE_BIT_LEN = (self.NUM_PLAYERS + 1) + 2*(self.NUM_PLAYERS *2 - 2)
     self.wandb_save = wandb_save
     self.card_rank = self.make_rank()
-    self.avg_strategy = {}
     self.memory_count_for_sl = 0
 
     self.random_seed = random_seed
@@ -37,6 +36,12 @@ class KuhnTrainer:
     self.step_per_learning_update = step_per_learning_update
     self.batch_episode_num = batch_episode_num
     self.whether_accurate_exploitability = whether_accurate_exploitability
+
+    #準備 Manager
+    manager = Manager()
+    self.avg_strategy = manager.dict()
+
+
 
 
 # _________________________________ Train main method _________________________________
@@ -68,8 +73,10 @@ class KuhnTrainer:
     #self.random_strategy_exploitability = self.get_exploitability_dfs()
     self.random_strategy_exploitability = [0.916, 2.063, 3.476, 5.011, 6.631][self.NUM_PLAYERS - 2]
 
-
-    self.epsilon_greedy_q_learning_strategy = copy.deepcopy(self.avg_strategy)
+    #最適反応戦略 Manager
+    self.epsilon_greedy_q_learning_strategy = {}
+    for node, pro in self.avg_strategy.items():
+      self.epsilon_greedy_q_learning_strategy[node] = pro
 
 
     self.RL = rl_module
@@ -79,6 +86,7 @@ class KuhnTrainer:
     self.N_count = copy.deepcopy(self.avg_strategy)
     for node, cn in self.N_count.items():
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
+
 
 
     for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
@@ -165,26 +173,26 @@ class KuhnTrainer:
     return current_br_exploitability
 
 
-
+  #戦略更新をする部分を並列化する
   def SL_and_RL_learn(self, iteration_t):
-    if self.sl_algo == "mlp":
-      self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
-    elif self.sl_algo == "cnt":
-      self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
-      self.M_SL = []
+
+    #教師あり学習
+    process1 = Process(target = self.SL.SL_learn, args=(self.M_SL, self.avg_strategy, iteration_t))
 
     #強化学習
-    if self.rl_algo != "dfs":
-      self.RL.rl_algo = self.rl_algo
-      self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
+    self.RL.rl_algo = self.rl_algo
+    process2 = Process(target = self.RL.RL_learn, args=(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t))
 
-    elif self.rl_algo == "dfs":
-      self.infoSets_dict = {}
-      for target_player in range(self.NUM_PLAYERS):
-        self.create_infoSets("", target_player, 1.0)
-      self.epsilon_greedy_q_learning_strategy = {}
-      for best_response_player_i in range(self.NUM_PLAYERS):
-        self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
+    process1.start()
+    process2.start()
+
+    process1.join()
+    process2.join()
+
+
+
+
+
 
 
   def make_episodes(self,episode_num):

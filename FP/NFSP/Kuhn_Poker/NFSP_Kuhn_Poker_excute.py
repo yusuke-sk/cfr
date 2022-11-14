@@ -37,9 +37,9 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 6,
+    num_players = 5,
     #parallelized
-    batch_episode_num = [40, 30, 20, 20, 15][6-2],
+    batch_episode_num = [40, 30, 20, 20, 15][5-2],
     wandb_save = [True, False][1],
     parallelized = ["DataCollect","StrategyUpdate", False][2],
     collect_step_or_episode = ["step", "episode"][1],
