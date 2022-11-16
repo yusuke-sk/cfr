@@ -27,7 +27,6 @@ import Paralleled_DC_NFSP_Kuhn_Poker_trainer
 import Paralleled_SU_NFSP_Kuhn_Poker_trainer
 import NFSP_Kuhn_Poker_supervised_learning
 import NFSP_Kuhn_Poker_reinforcement_learning_DQN
-import NFSP_Kuhn_Poker_reinforcement_learning_SAC
 import NFSP_Kuhn_Poker_generate_data
 
 
@@ -37,15 +36,15 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 5,
+    num_players = 2,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][5-2],
-    wandb_save = [True, False][1],
+    wandb_save = [True, False][0],
     parallelized = ["DataCollect","StrategyUpdate", False][2],
-    collect_step_or_episode = ["step", "episode"][1],
-    whether_accurate_exploitability =[True, False, "Dont_calculate"][2],
+    collect_step_or_episode = ["step", "episode"][0],
+    whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     #rl
-    rl_algo = ["dfs", "dqn", "ddqn", "sac", "sql"][1]
+    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3]
   )
 
 
@@ -80,12 +79,12 @@ if __name__ == '__main__':
     #sql
     rl_alpha = 1e+0,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
-    alpha_discrease = [True, False][0],
+    alpha_discrease = [True, False][1],
     )
 
     config.update(config_plus)
 
-  elif config["rl_algo"] in ["sac"] :
+
     config_plus = dict(
     eta = 0.1,
     memory_size_rl = 2*(10**4),
@@ -116,24 +115,27 @@ if __name__ == '__main__':
     device = torch.device('cpu')
     )
 
-    config.update(config_plus)
-
+    config.update(config_plus
 
   if config["wandb_save"]:
     #並列化の実験用
     if config["parallelized"] ==  "DataCollect" or   config["parallelized"] ==  "StrategyUpdate":
       wandb.init(project="Kuhn_Poker_trained_Parallel_{}players".format(config["num_players"])
       , name="{}_NFSP".format(config["parallelized"]))
-    elif config["rl_algo"] == "sac":
-      wandb.init(project="Kuhn_Poker_{}players_SAC".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
-    #elif config["rl_algo"] == "sql":
+
+    elif config["rl_algo"] == "sql":
       #wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_A_{}_P_{}_NFSP".
       #format(config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["parallelized"]))
-      #wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["rl_alpha"]))
+      if config["alpha_discrease"]:
+        alpha_type = "alpha:" + str(config["rl_alpha"]) + "_decrease"
+      else:
+        alpha_type = "alpha:" + str(config["rl_alpha"]) + "_const"
+      wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"],alpha_type))
 
     else:
-      wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"],
-      config["collect_step_or_episode"]))
+      #wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"],
+      #config["collect_step_or_episode"]))
+      wandb.init(project="Kuhn_Poker_{}players".format(config["num_players"]), name="{}_{}_NFSP".format(config["rl_algo"], config["sl_algo"]))
 
     wandb.config.update(config)
     wandb.define_metric("exploitability", summary="last")
@@ -207,28 +209,6 @@ if __name__ == '__main__':
       )
 
 
-  elif config["rl_algo"] == "sac":
-    kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning_SAC.ReinforcementLearning(
-      random_seed = config["random_seed"],
-      train_iterations = config["iterations"],
-      num_players= config["num_players"],
-      hidden_units_num = config["rl_hidden_units_num"],
-      entropy_lr = config["rl_entropy_lr"],
-      policy_lr = config["rl_policy_lr"],
-      critic_lr = config["rl_critic_lr"],
-      epochs = config["rl_epochs"],
-      sampling_num = config["rl_sampling_num"],
-      gamma = config["rl_gamma"],
-      tau = config["rl_tau"],
-      update_frequency = config["rl_update_frequency"],
-      loss_function = config["rl_loss_function"],
-      kuhn_trainer_for_rl = kuhn_trainer,
-      device = config["device"],
-      value_of_alpha_change = config["rl_value_of_alpha_change"],
-      alpha= config["rl_alpha"],
-      )
-
-
 
   kuhn_SL = NFSP_Kuhn_Poker_supervised_learning.SupervisedLearning(
     random_seed = config["random_seed"],
@@ -281,26 +261,6 @@ if __name__ == '__main__':
     result_dict_br = {}
     for key, value in sorted(kuhn_trainer.epsilon_greedy_q_learning_strategy.items()):
       result_dict_br[key] = value
-    df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])
-    df1.index.name = "Node"
-
-    df2 = pd.concat([df, df1], axis=1)
-
-  elif config["rl_algo"] == "sac":
-    result_dict_avg = {}
-    for key, value in sorted(kuhn_trainer.avg_strategy.items()):
-      result_dict_avg[key] = value
-    df = pd.DataFrame(result_dict_avg.values(), index=result_dict_avg.keys(), columns=['Pass_avg', "Bet_avg"])
-    df.index.name = "Node"
-
-    result_dict_br = {}
-    for key, value in sorted(kuhn_trainer.epsilon_greedy_q_learning_strategy.items()):
-      eval_s_bit = torch.Tensor(kuhn_trainer.make_state_bit(key))
-      action_prob = kuhn_trainer.RL.action_step_prob(eval_s_bit)
-      current_q1_values, current_q2_values = kuhn_trainer.RL.critic(eval_s_bit)
-      print(key, current_q1_values, current_q2_values)
-
-      result_dict_br[key] = action_prob
     df1 = pd.DataFrame(result_dict_br.values(), index=result_dict_br.keys(), columns=['Pass_br', "Bet_br"])
     df1.index.name = "Node"
 
