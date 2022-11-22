@@ -157,6 +157,8 @@ class KuhnTrainer:
     assert optimality_gap >= 0
     return optimality_gap , dfs_exploitability, current_br_exploitability
 
+
+
   def get_current_br_exploitability(self):
     current_br_exploitability = 0
     for player_i in range(self.NUM_PLAYERS):
@@ -192,18 +194,15 @@ class KuhnTrainer:
 
 
       if self.sigma_strategy_bit[player] == 0:
-        if self.rl_algo in ["dqn" , "dfs" , "ddqn", "sql"]:
-          sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
+        # 状態sの最適反応戦略を求める
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
 
-        elif self.rl_algo == "sac":
-          s_bit = torch.Tensor(self.make_state_bit(s))
-          sampling_action = self.RL.action_step(s_bit)
-        else:
-          raise Exception('Error!')
+
 
 
       elif self.sigma_strategy_bit[player] == 1:
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s])
+
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
 
 
       a = ("p" if sampling_action == 0 else "b")
@@ -228,7 +227,7 @@ class KuhnTrainer:
       if self.game_step_count % self.step_per_learning_update == 0:
 
         if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
+          self.SL.SL_learn(self.M_SL, iteration_t)
         elif self.sl_algo == "cnt":
           self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
           self.M_SL = []
@@ -236,7 +235,7 @@ class KuhnTrainer:
 
         if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
+          self.RL.RL_learn(self.M_RL, iteration_t)
 
 
         elif self.rl_algo == "dfs":
