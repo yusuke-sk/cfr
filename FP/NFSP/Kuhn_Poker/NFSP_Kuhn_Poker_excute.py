@@ -36,7 +36,7 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 2,
+    num_players = 4,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][5-2],
     wandb_save = [True, False][0],
@@ -77,9 +77,9 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 1e+0,
+    rl_alpha = 5e+1,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
-    alpha_discrease = [True, False][1],
+    alpha_discrease = [True, False][0],
     )
 
     config.update(config_plus)
@@ -108,14 +108,12 @@ if __name__ == '__main__':
     rl_policy_lr =  0.0001,
     rl_critic_lr =  0.01,
     rl_loss_function = [F.mse_loss, nn.HuberLoss()][0],
-    rl_value_of_alpha_change = False,
-    rl_alpha = 0.1,
     # device
     #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
     device = torch.device('cpu')
     )
 
-    config.update(config_plus
+    config.update(config_plus)
 
   if config["wandb_save"]:
     #並列化の実験用
