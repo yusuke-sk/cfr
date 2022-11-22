@@ -126,7 +126,6 @@ class SupervisedLearning:
 
 
     # eval
-    """#NNをtableに書き写さない
     self.sl_network.eval()
     with torch.no_grad():
       for node_X , _ in update_strategy.items():
@@ -137,7 +136,6 @@ class SupervisedLearning:
 
 
         update_strategy[node_X] = np.array([1.0-y[0], y[0]])
-    """
 
 
 

@@ -168,7 +168,7 @@ class ReinforcementLearning:
 
     self.save_count += 1
 
-    """
+
     #sql でも ε-greedyにするなら下に追加 → , "sql"
     if (self.rl_algo in ["dqn" , "ddqn"]) or (self.rl_algo == "sql" and  self.rl_strategy == "ε-greedy"):
       #eval
@@ -204,7 +204,7 @@ class ReinforcementLearning:
 
 
             assert 0.999 <= dist[0] + dist[1]  <= 1.001
-    """
+
 
 
 
