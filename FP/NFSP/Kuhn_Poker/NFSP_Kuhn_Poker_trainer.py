@@ -138,7 +138,12 @@ class KuhnTrainer:
     #self.database_for_plot["iteration"].append(iteration_t)
     #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
+
   def get_exploitability_and_optimal_gap(self):
+    #最適反応戦略のテーブルを更新
+    self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
+
+
     optimality_gap = 0
     self.infoSets_dict = {}
     for target_player in range(self.NUM_PLAYERS):
@@ -160,6 +165,9 @@ class KuhnTrainer:
 
 
   def get_current_br_exploitability(self):
+    #最適反応戦略のテーブルを更新
+    self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
+
     current_br_exploitability = 0
     for player_i in range(self.NUM_PLAYERS):
       current_br_exploitability += self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i)
@@ -242,9 +250,9 @@ class KuhnTrainer:
           self.infoSets_dict = {}
           for target_player in range(self.NUM_PLAYERS):
             self.create_infoSets("", target_player, 1.0)
-          self.epsilon_greedy_q_learning_strategy = {}
+          self.dfs_strategy = {}
           for best_response_player_i in range(self.NUM_PLAYERS):
-            self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
+            self.calc_best_response_value(self.dfs_strategy , best_response_player_i, "", 1)
 
 
 

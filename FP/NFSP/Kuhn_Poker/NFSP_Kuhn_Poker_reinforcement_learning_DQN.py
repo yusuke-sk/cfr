@@ -173,7 +173,6 @@ class ReinforcementLearning:
       with torch.no_grad():
         outputs = self.deep_q_network.forward(state_bit).detach().numpy()
 
-        print(outputs)
 
         if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
           action = np.random.randint(self.num_actions)
@@ -187,6 +186,45 @@ class ReinforcementLearning:
             return np.array([1, 0], dtype=float)
           else:
             return np.array([0, 1], dtype=float)
+
+
+  def update_strategy_for_table(self, update_strategy):
+    #sql でも ε-greedyにするなら下に追加 → , "sql"
+    if (self.rl_algo in ["dqn" , "ddqn"]) or (self.rl_algo == "sql" and  self.rl_strategy == "ε-greedy"):
+      #eval
+      self.deep_q_network.eval()
+      with torch.no_grad():
+        for node_X , _ in update_strategy.items():
+          inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+          y = self.deep_q_network.forward(inputs_eval).to('cpu').detach().numpy()
+
+
+          if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
+            action = np.random.randint(self.num_actions)
+            if action == 0:
+              update_strategy[node_X] = np.array([1, 0], dtype=float)
+            else:
+              update_strategy[node_X] = np.array([0, 1], dtype=float)
+
+          else:
+            if y[0][0] > y[0][1]:
+              update_strategy[node_X] = np.array([1, 0], dtype=float)
+            else:
+              update_strategy[node_X] = np.array([0, 1], dtype=float)
+
+
+    elif self.rl_algo in ["sql"]  and  self.rl_strategy == "proportional_Q" :
+        with torch.no_grad():
+          for node_X , _ in update_strategy.items():
+            inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+            q = self.deep_q_network.forward(inputs_eval)
+            dist = F.softmax(q/self.alpha, dim=1)[0].numpy()
+
+            update_strategy[node_X] = dist
+
+
+            assert 0.999 <= dist[0] + dist[1]  <= 1.001
+
 
 
 doctest.testmod()

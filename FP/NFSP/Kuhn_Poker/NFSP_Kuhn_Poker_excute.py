@@ -35,7 +35,7 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**3,
+    iterations = 10**6,
     num_players = 2,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][5-2],
