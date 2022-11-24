@@ -23,7 +23,8 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class KuhnTrainer:
-  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128, whether_accurate_exploitability = True):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128, whether_accurate_exploitability = True,
+  save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
@@ -39,6 +40,7 @@ class KuhnTrainer:
 
     self.step_per_learning_update = step_per_learning_update
     self.whether_accurate_exploitability = whether_accurate_exploitability
+    self.save_matploitlib = save_matplotlib
 
 
 # _________________________________ Train main method _________________________________
@@ -53,8 +55,9 @@ class KuhnTrainer:
 
 
     #追加 matplotlibで図を書くため
-    #self.ex_name = "exploitability_rate_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
-    #self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+    if self.save_matploitlib:
+      self.ex_name = "exploitability_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
 
     self.M_SL = []
@@ -135,15 +138,12 @@ class KuhnTrainer:
         wandb.log({'iteration': iteration_t, 'pseudo_exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t],  "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
 
     #追加 matplotlibで図を書くため
-    #self.database_for_plot["iteration"].append(iteration_t)
-    #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
+    if self.save_matploitlib:
+      self.database_for_plot["iteration"].append(iteration_t)
+      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/)
 
 
   def get_exploitability_and_optimal_gap(self):
-    #最適反応戦略のテーブルを更新
-    self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
-
-
     optimality_gap = 0
     self.infoSets_dict = {}
     for target_player in range(self.NUM_PLAYERS):
@@ -162,12 +162,7 @@ class KuhnTrainer:
     assert optimality_gap >= 0
     return optimality_gap , dfs_exploitability, current_br_exploitability
 
-
-
   def get_current_br_exploitability(self):
-    #最適反応戦略のテーブルを更新
-    self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
-
     current_br_exploitability = 0
     for player_i in range(self.NUM_PLAYERS):
       current_br_exploitability += self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i)
@@ -202,15 +197,18 @@ class KuhnTrainer:
 
 
       if self.sigma_strategy_bit[player] == 0:
-        # 状態sの最適反応戦略を求める
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
+        if self.rl_algo in ["dqn" , "dfs" , "ddqn", "sql"]:
+          sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
 
-
+        elif self.rl_algo == "sac":
+          s_bit = torch.Tensor(self.make_state_bit(s))
+          sampling_action = self.RL.action_step(s_bit)
+        else:
+          raise Exception('Error!')
 
 
       elif self.sigma_strategy_bit[player] == 1:
-
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s])
 
 
       a = ("p" if sampling_action == 0 else "b")
@@ -235,7 +233,7 @@ class KuhnTrainer:
       if self.game_step_count % self.step_per_learning_update == 0:
 
         if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, iteration_t)
+          self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
         elif self.sl_algo == "cnt":
           self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
           self.M_SL = []
@@ -243,16 +241,16 @@ class KuhnTrainer:
 
         if self.rl_algo != "dfs":
           self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, iteration_t)
+          self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
 
 
         elif self.rl_algo == "dfs":
           self.infoSets_dict = {}
           for target_player in range(self.NUM_PLAYERS):
             self.create_infoSets("", target_player, 1.0)
-          self.dfs_strategy = {}
+          self.epsilon_greedy_q_learning_strategy = {}
           for best_response_player_i in range(self.NUM_PLAYERS):
-            self.calc_best_response_value(self.dfs_strategy , best_response_player_i, "", 1)
+            self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
 

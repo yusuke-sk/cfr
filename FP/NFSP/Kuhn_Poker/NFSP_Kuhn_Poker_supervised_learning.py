@@ -91,7 +91,7 @@ class SupervisedLearning:
 
 
 
-  def SL_learn(self, memory, iteration_t):
+  def SL_learn(self, memory, update_strategy, iteration_t):
     self.sl_network.train()
 
     total_loss = []
@@ -124,18 +124,18 @@ class SupervisedLearning:
 
 
 
-  def action_step(self, state_bit):
+
+    # eval
     self.sl_network.eval()
     with torch.no_grad():
-      outputs = self.sl_network.forward(state_bit).detach().numpy()
-    return outputs
+      for node_X , _ in update_strategy.items():
+
+        inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN).to(self.device)
+
+        y = torch.sigmoid(self.sl_network.forward(inputs_eval)).to('cpu').detach().numpy()[0]
 
 
-
-
-
-
-
+        update_strategy[node_X] = np.array([1.0-y[0], y[0]])
 
 
 
