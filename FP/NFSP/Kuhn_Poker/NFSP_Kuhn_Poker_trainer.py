@@ -59,11 +59,7 @@ class KuhnTrainer:
 
     #追加 matplotlibで図を書くため
     if self.save_matploitlib:
-      if self.rl_algo == "sql":
-        self.ex_name = "exploitability_for_seed{}_{}_alpha{}_{}".format(self.random_seed, self.rl_algo, self.RL.alpha, self.RL.alpha_discrease)
-      else:
-        self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
-
+      self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
       self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
 
