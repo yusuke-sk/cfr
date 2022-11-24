@@ -53,11 +53,19 @@ class KuhnTrainer:
     self.memory_size_sl = memory_size_sl
     self.memory_size_rl = memory_size_rl
 
+    self.RL = rl_module
+    self.SL = sl_module
+    self.GD = gd_module
 
     #追加 matplotlibで図を書くため
     if self.save_matploitlib:
-      self.ex_name = "exploitability_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+      if self.rl_algo == "sql":
+        self.ex_name = "exploitability_for_seed{}_{}_alpha{}_{}".format(self.random_seed, self.rl_algo, self.RL.alpha, self.RL.alpha_discrease)
+      else:
+        self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
+
       self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+
 
 
     self.M_SL = []
@@ -79,9 +87,6 @@ class KuhnTrainer:
     self.epsilon_greedy_q_learning_strategy = copy.deepcopy(self.avg_strategy)
 
     self.game_step_count = 0
-    self.RL = rl_module
-    self.SL = sl_module
-    self.GD = gd_module
 
     self.N_count = copy.deepcopy(self.avg_strategy)
     for node, cn in self.N_count.items():
@@ -140,7 +145,7 @@ class KuhnTrainer:
     #追加 matplotlibで図を書くため
     if self.save_matploitlib:
       self.database_for_plot["iteration"].append(iteration_t)
-      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/)
+      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
   def get_exploitability_and_optimal_gap(self):

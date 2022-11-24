@@ -35,8 +35,8 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**6,
-    num_players = 4,
+    iterations = 10**3,
+    num_players = 2,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][5-2],
     wandb_save = [True, False][1],
@@ -44,10 +44,9 @@ if __name__ == '__main__':
     collect_step_or_episode = ["step", "episode"][0],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     #rl
-    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
-
+    rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
     #result matplotlib
-    save_matplotlib = [True, False][1],
+    save_matplotlib = [True, False][0],
   )
 
 
@@ -80,9 +79,9 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 5e+1,
+    rl_alpha = 1e-12,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
-    alpha_discrease = [True, False][0],
+    alpha_discrease = [True, False][1],
     )
 
     config.update(config_plus)
@@ -284,7 +283,10 @@ if __name__ == '__main__':
   if config["save_matplotlib"]:
     df = pd.DataFrame(kuhn_trainer.database_for_plot)
     df = df.set_index('iteration')
-    df.to_csv('../../../Make_png/output/database_for_plot_{}_{}.csv'.format(config["num_players"],config["random_seed"]))
+    if config["rl_algo"] == "sql":
+      df.to_csv('../../../Other/Make_png/output/{}players/DB_for_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+    else:
+      df.to_csv('../../../Other/Make_png/output/{}players/DB_for_NFSP_{}.csv'.format(config["num_players"], config["rl_algo"]))
 
 
   doctest.testmod()
