@@ -21,7 +21,7 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class LeducTrainer:
-  def __init__(self, random_seed=42, train_iterations=10, num_players=2, wandb_save=False):
+  def __init__(self, random_seed=42, train_iterations=10, num_players=2, wandb_save=False, save_matplotlib=False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 3
@@ -39,7 +39,7 @@ class LeducTrainer:
     self.card_set = set(self.card_distribution())
 
     self.random_seed_fix(self.random_seed)
-
+    self.save_matploitlib = save_matplotlib
 
 # _________________________________ Train main method _________________________________
   def train(self, eta, memory_size_rl, memory_size_sl, rl_algo, sl_algo, rl_module, sl_module, gd_module):
@@ -54,7 +54,9 @@ class LeducTrainer:
 
 
     #追加 matplotlibで図を書くため
-    #self.database_for_plot = {"iteration":[] ,"exploitability_NFSP":[]}
+    if self.save_matploitlib:
+      self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
+      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
 
     self.M_SL = []
@@ -141,9 +143,9 @@ class LeducTrainer:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
 
         #追加 matplotlibで図を書くため
-        #self.database_for_plot["iteration"].append(iteration_t)
-        #self.database_for_plot["exploitability_NFSP"].append(self.exploitability_list[iteration_t])
-
+        if self.save_matploitlib:
+          self.database_for_plot["iteration"].append(iteration_t)
+          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
 # _________________________________ Train second main method _________________________________

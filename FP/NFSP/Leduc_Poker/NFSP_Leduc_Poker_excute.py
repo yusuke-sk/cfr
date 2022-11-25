@@ -27,9 +27,9 @@ import NFSP_Leduc_Poker_generate_data
 config = dict(
   random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
-  num_players = 3,
-  wandb_save = [True, False][0],
-
+  num_players = 2,
+  wandb_save = [True, False][1],
+  save_matplotlib = [True, False][0],
 
   #train
   eta = 0.1,
@@ -51,11 +51,11 @@ config = dict(
   rl_tau = 0.1,
   rl_update_frequency = 300,
   sl_algo = ["cnt", "mlp"][1],
-  rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
+  rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
   #sql
-  rl_alpha = 5e+1,
+  rl_alpha = 1e-1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
-  alpha_discrease = [True, False][0],
+  alpha_discrease = [True, False][1],
 )
 
 
@@ -77,7 +77,8 @@ leduc_trainer = NFSP_Leduc_Poker_trainer.LeducTrainer(
   random_seed = config["random_seed"],
   train_iterations = config["iterations"],
   num_players= config["num_players"],
-  wandb_save = config["wandb_save"]
+  wandb_save = config["wandb_save"],
+  save_matplotlib = config["save_matplotlib"],
   )
 
 
@@ -164,10 +165,15 @@ if config["wandb_save"]:
 else:
   print(df2)
 
-#追加 matplotlibで図を書くため
-#df = pd.DataFrame(leduc_trainer.database_for_plot)
-#df = df.set_index('iteration')
-#df.to_csv('../../../Make_png/output/database_for_plot_NFSP.csv')
+  #追加 matplotlibで図を書くため
+  if config["save_matplotlib"]:
+    df = pd.DataFrame(leduc_trainer.database_for_plot)
+    df = df.set_index('iteration')
+    if config["rl_algo"] == "sql":
+      df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+    else:
+      df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_NFSP_{}.csv'.format(config["num_players"], config["rl_algo"]))
+
 
 
 doctest.testmod()
