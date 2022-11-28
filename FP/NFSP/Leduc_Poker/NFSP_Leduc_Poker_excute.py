@@ -53,9 +53,9 @@ config = dict(
   sl_algo = ["cnt", "mlp"][1],
   rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
   #sql
-  rl_alpha = 1e-1,
+  rl_alpha = 1e+1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
-  alpha_discrease = [True, False][1],
+  alpha_discrease = [True, False][0],
 )
 
 

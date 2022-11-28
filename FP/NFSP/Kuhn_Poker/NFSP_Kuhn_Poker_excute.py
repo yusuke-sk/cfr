@@ -36,7 +36,7 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 5,
+    num_players = 3,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][5-2],
     wandb_save = [True, False][1],
@@ -79,9 +79,9 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 1e0,
+    rl_alpha = 1e1,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
-    alpha_discrease = [True, False][1],
+    alpha_discrease = [True, False][0],
     )
 
     config.update(config_plus)
