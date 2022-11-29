@@ -59,7 +59,7 @@ class Node:
 
 #Trainer class
 class KuhnTrainer:
-  def __init__(self, train_iterations=10**4, num_players =2, random_seed = 42):
+  def __init__(self, train_iterations=10**4, num_players =2, random_seed = 42, save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
@@ -69,6 +69,8 @@ class KuhnTrainer:
     self.random_seed = random_seed
 
     self.random_seed_fix(self.random_seed)
+
+    self.save_matplotlib = save_matplotlib
 
 
   def random_seed_fix(self, random_seed):
@@ -400,6 +402,14 @@ class KuhnTrainer:
   def train(self, method):
     self.exploitability_list = {}
     self.avg_utility_list = {}
+
+
+    #追加 matplotlibで図を書くため
+    if self.save_matplotlib:
+      self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, method)
+      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+
+
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
       for target_player_i in range(self.NUM_PLAYERS):
 
@@ -423,6 +433,11 @@ class KuhnTrainer:
         if config["wandb_save"]:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t]})
 
+
+        #追加 matplotlibで図を書くため
+        if self.save_matplotlib:
+          self.database_for_plot["iteration"].append(iteration_t)
+          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
 
@@ -544,10 +559,11 @@ class KuhnTrainer:
 #config
 config = dict(
   algo = ["vanilla_CFR", "chance_sampling_CFR", "external_sampling_MCCFR", "outcome_sampling_MCCFR"][3],
-  train_iterations = 10**5,
+  train_iterations = 10**6,
   num_players =  5,
   random_seed = 42,
-  wandb_save = True
+  wandb_save = False,
+  save_matplotlib = [True, False][0],
 )
 
 if config["wandb_save"]:
@@ -557,7 +573,11 @@ if config["wandb_save"]:
 
 
 #train
-kuhn_trainer = KuhnTrainer(train_iterations=config["train_iterations"], num_players=config["num_players"], random_seed=config["random_seed"])
+kuhn_trainer = KuhnTrainer(
+  train_iterations=config["train_iterations"],
+  num_players=config["num_players"],
+  random_seed=config["random_seed"],
+  save_matplotlib = config["save_matplotlib"])
 kuhn_trainer.train(config["algo"])
 
 
@@ -581,12 +601,18 @@ if config["wandb_save"]:
 else:
   print(df)
 
+#追加 matplotlibで図を書くため
+  if config["save_matplotlib"]:
+    df = pd.DataFrame(kuhn_trainer.database_for_plot)
+    df = df.set_index('iteration')
+    df.to_csv('../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["algo"]))
+
 
 
 # calculate random strategy_profile exploitability
-for i in range(1,3):
-  kuhn_poker_agent = KuhnTrainer(train_iterations=0, num_players=i)
-  print("{}player game:".format(i), "random strategy exploitability:", kuhn_poker_agent.get_exploitability_dfs(), "infoset num:", len(kuhn_poker_agent.infoSets_dict))
+#for i in range(1,3):
+#  kuhn_poker_agent = KuhnTrainer(train_iterations=0, num_players=i)
+#  print("{}player game:".format(i), "random strategy exploitability:", kuhn_poker_agent.get_exploitability_dfs(), "infoset num:", len(kuhn_poker_agent.infoSets_dict))
 
 
 

@@ -17,10 +17,12 @@ import FSP_Kuhn_Poker_trainer
 
 
 class GenerateData:
-  def __init__(self, num_players, num_actions):
+  def __init__(self, num_players, num_actions, random_seed):
     self.num_players = num_players
     self.num_actions = num_actions
     self.kuhn_trainer = FSP_Kuhn_Poker_trainer.KuhnTrainer(num_players=self.num_players)
+    self.random_seed = random_seed
+    self.kuhn_trainer.random_seed_fix(self.random_seed)
 
 
   def generate_data0(self, pi_strategy, beta_strategy, n, m, eta):
@@ -166,5 +168,6 @@ class GenerateData:
       nodeUtil += strategy[ai] * util_list[ai]
 
     return nodeUtil
+
 
 doctest.testmod()

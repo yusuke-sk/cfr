@@ -40,7 +40,7 @@ class KuhnTrainer:
 
     self.step_per_learning_update = step_per_learning_update
     self.whether_accurate_exploitability = whether_accurate_exploitability
-    self.save_matploitlib = save_matplotlib
+    self.save_matplotlib = save_matplotlib
 
 
 # _________________________________ Train main method _________________________________
@@ -58,7 +58,7 @@ class KuhnTrainer:
     self.GD = gd_module
 
     #追加 matplotlibで図を書くため
-    if self.save_matploitlib:
+    if self.save_matplotlib:
       self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
       self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
@@ -139,7 +139,7 @@ class KuhnTrainer:
         wandb.log({'iteration': iteration_t, 'pseudo_exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t],  "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
 
     #追加 matplotlibで図を書くため
-    if self.save_matploitlib:
+    if self.save_matplotlib:
       self.database_for_plot["iteration"].append(iteration_t)
       self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 

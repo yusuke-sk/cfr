@@ -13,23 +13,25 @@ import copy
 from sklearn.neural_network import MLPClassifier
 from collections import deque
 import wandb
-
+import random
 import FSP_Kuhn_Poker_trainer
 
 
 
 #config
 config = dict(
+  random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
-  num_players = 2,
+  num_players = 5,
   n= 2,
   m= 1,
   memory_size_rl= 10**3,
   memory_size_sl= 10**3,
-  rl_algo = ["epsilon-greedy", "boltzmann", "dfs"][1],
+  rl_algo = ["epsilon-greedy", "boltzmann", "dfs"][0],
   sl_algo = ["cnt", "mlp"][0],
   pseudo_code = ["general_FSP", "batch_FSP"][1],
-  wandb_save = True
+  wandb_save = [True, False][1],
+  save_matplotlib = [True, False][0],
   )
 
 
@@ -44,8 +46,10 @@ if config["wandb_save"]:
 #train
 
 kuhn_trainer = FSP_Kuhn_Poker_trainer.KuhnTrainer(
+  random_seed = config["random_seed"],
   train_iterations = config["iterations"],
-  num_players= config["num_players"]
+  num_players= config["num_players"],
+  save_matplotlib = config["save_matplotlib"],
   )
 
 
@@ -91,5 +95,10 @@ else:
   print(df2)
 
 
+#追加 matplotlibで図を書くため
+  if config["save_matplotlib"]:
+    df = pd.DataFrame(kuhn_trainer.database_for_plot)
+    df = df.set_index('iteration')
+    df.to_csv('../../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_FSP.csv'.format(config["num_players"], config["random_seed"]))
 
 doctest.testmod()

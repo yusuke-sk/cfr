@@ -19,7 +19,7 @@ import FSP_Kuhn_Poker_trainer
 
 
 class ReinforcementLearning:
-  def __init__(self, infoSet_dict_player, num_players, num_actions):
+  def __init__(self, infoSet_dict_player, num_players, num_actions, random_seed):
     self.gamma = 1
     self.num_players = num_players
     self.num_actions = num_actions
@@ -28,7 +28,8 @@ class ReinforcementLearning:
     #[{'J': 0, 'Jpb': 1, 'Q': 2, 'Qpb': 3, 'K': 4, 'Kpb': 5}, {'Qp': 0, 'Qb': 1, 'Kp': 2, 'Kb': 3, 'Jp': 4, 'Jb': 5}]
 
     self.kuhn_trainer = FSP_Kuhn_Poker_trainer.KuhnTrainer(num_players=self.num_players)
-
+    self.random_seed = random_seed
+    self.kuhn_trainer.random_seed_fix(self.random_seed)
 
 
 
@@ -122,6 +123,7 @@ class ReinforcementLearning:
             update_strategy[state] = np.array([1, 0], dtype=float)
           else:
             update_strategy[state] = np.array([0, 1], dtype=float)
+
 
 
 doctest.testmod()

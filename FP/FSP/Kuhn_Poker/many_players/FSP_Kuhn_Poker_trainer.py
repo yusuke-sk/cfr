@@ -23,12 +23,17 @@ import FSP_Kuhn_Poker_generate_data
 
 
 class KuhnTrainer:
-  def __init__(self, train_iterations=10**1, num_players =2):
+  def __init__(self, random_seed = 42, train_iterations=10**1, num_players =2, save_matplotlib = False):
+    self.random_seed = random_seed
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
     self.avg_strategy = {}
     self.card_rank = self.make_rank(self.NUM_PLAYERS)
+    self.save_matplotlib = save_matplotlib
+
+    self.random_seed_fix(self.random_seed)
+
 
 
   def make_rank(self, num_players):
@@ -288,6 +293,10 @@ class KuhnTrainer:
     return nodeUtil
 
 
+  def random_seed_fix(self, random_seed):
+      random.seed(random_seed)
+      np.random.seed(random_seed)
+
 
 
   def show_plot(self, method):
@@ -306,6 +315,11 @@ class KuhnTrainer:
   def train(self, n, m, memory_size_rl, memory_size_sl, wandb_save, rl_algo, sl_algo, pseudo_code):
     self.exploitability_list = {}
     self.avg_utility_list = {}
+
+    #追加 matplotlibで図を書くため
+    if self.save_matplotlib:
+      self.ex_name = "exploitability_for_{}_FSP".format(self.random_seed)
+      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
 
 
@@ -330,9 +344,9 @@ class KuhnTrainer:
 
 
 
-    RL = FSP_Kuhn_Poker_reinforcement_learning.ReinforcementLearning(self.infoSets_dict_player, self.NUM_PLAYERS, self.NUM_ACTIONS)
-    SL = FSP_Kuhn_Poker_supervised_learning.SupervisedLearning(self.NUM_PLAYERS, self.NUM_ACTIONS)
-    GD = FSP_Kuhn_Poker_generate_data.GenerateData(self.NUM_PLAYERS, self.NUM_ACTIONS)
+    RL = FSP_Kuhn_Poker_reinforcement_learning.ReinforcementLearning(self.infoSets_dict_player, self.NUM_PLAYERS, self.NUM_ACTIONS, self.random_seed)
+    SL = FSP_Kuhn_Poker_supervised_learning.SupervisedLearning(self.NUM_PLAYERS, self.NUM_ACTIONS, self.random_seed)
+    GD = FSP_Kuhn_Poker_generate_data.GenerateData(self.NUM_PLAYERS, self.NUM_ACTIONS, self.random_seed)
 
 
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
@@ -420,6 +434,11 @@ class KuhnTrainer:
 
         if wandb_save:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
+
+        #追加 matplotlibで図を書くため
+        if self.save_matplotlib:
+          self.database_for_plot["iteration"].append(iteration_t)
+          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
 

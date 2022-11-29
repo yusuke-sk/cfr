@@ -20,12 +20,15 @@ warnings.filterwarnings('ignore')
 
 
 class SupervisedLearning:
-  def __init__(self, num_players=2, num_actions=2):
+  def __init__(self, num_players=2, num_actions=2, random_seed = 42):
     self.num_players = num_players
     self.num_actions = num_actions
     self.max_len_X_bit = (self.num_players + 1) + 2*(self.num_players *2 - 2)
 
     self.card_order  = self.make_card_order(self.num_players)
+
+    self.random_seed = random_seed
+    self.random_seed_fix(random_seed = self.random_seed)
 
 
   def make_card_order(self, num_players):
@@ -149,5 +152,11 @@ class SupervisedLearning:
       one_episode_split.append((s,a))
 
     return one_episode_split
+
+
+  def random_seed_fix(self, random_seed):
+      random.seed(random_seed)
+      np.random.seed(random_seed)
+
 
 doctest.testmod()
