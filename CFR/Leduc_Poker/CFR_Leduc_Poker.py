@@ -82,7 +82,7 @@ class Node:
 
 # Leduc Trainer
 class LeducTrainer:
-  def __init__(self, train_iterations=10, num_players = 2, random_seed = 42):
+  def __init__(self, train_iterations=10, num_players = 2, random_seed = 42, save_matplotlib = False):
     #f: FOLD, c: CALL , r:RAISE
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
@@ -94,6 +94,8 @@ class LeducTrainer:
     self.random_seed = random_seed
 
     self.random_seed_fix(self.random_seed)
+
+    self.save_matplotlib = save_matplotlib
 
   def make_rank(self):
     """return dict
@@ -651,8 +653,9 @@ class LeducTrainer:
     self.exploitability_list = {}
 
     #追加 matplotlibで図を書くため
-    #self.ex_name = "exploitability_{}".format(method)
-    #self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+    if self.save_matplotlib:
+      self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, method)
+      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
 
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
@@ -677,9 +680,9 @@ class LeducTrainer:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t]})
 
         #追加 matplotlibで図を書くため
-        #self.database_for_plot["iteration"].append(iteration_t)
-        #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
-
+        if self.save_matplotlib:
+          self.database_for_plot["iteration"].append(iteration_t)
+          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
   def random_seed_fix(self, random_seed):
@@ -840,7 +843,8 @@ config = dict(
   train_iterations = 10**6,
   num_players =  2,
   random_seed = 42,
-  wandb_save = False
+  wandb_save = [True, False][1],
+  save_matplotlib = [True, False][0],
 )
 
 if config["wandb_save"]:
@@ -850,7 +854,13 @@ if config["wandb_save"]:
 
 
 #train
-leduc_trainer = LeducTrainer(train_iterations=config["train_iterations"], num_players=config["num_players"], random_seed=config["random_seed"])
+leduc_trainer = LeducTrainer(
+  train_iterations=config["train_iterations"],
+  num_players=config["num_players"],
+  random_seed=config["random_seed"],
+  save_matplotlib = config["save_matplotlib"]
+  )
+
 leduc_trainer.train(config["algo"])
 
 if not config["wandb_save"]:
@@ -873,16 +883,18 @@ if config["wandb_save"]:
 else:
   print(df)
 
+
 #追加 matplotlibで図を書くため
-#df = pd.DataFrame(leduc_trainer.database_for_plot)
-#df = df.set_index('iteration')
-#df.to_csv('../../Make_png/output/database_for_plot_{}.csv'.format(config["algo"]))
+  if config["save_matplotlib"]:
+    df = pd.DataFrame(leduc_trainer.database_for_plot)
+    df = df.set_index('iteration')
+    df.to_csv('../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["algo"]))
 
 
 # calculate random strategy_profile exploitability
-for i in [config["num_players"]]:
-  leduc_poker_agent = LeducTrainer(train_iterations=0, num_players=i)
-  print("{}player game:".format(i), "random strategy exploitability:", leduc_poker_agent.get_exploitability_dfs(), "infoset num:", len(leduc_poker_agent.infoSets_dict))
+#for i in [config["num_players"]]:
+#  leduc_poker_agent = LeducTrainer(train_iterations=0, num_players=i)
+#  print("{}player game:".format(i), "random strategy exploitability:", leduc_poker_agent.get_exploitability_dfs(), "infoset num:", len(leduc_poker_agent.infoSets_dict))
 
   #upper_bound = (i+1) * (3**(2*i - 2))
   #print("upper_bound:", upper_bound)

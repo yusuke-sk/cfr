@@ -21,7 +21,7 @@ import FSP_Leduc_Poker_generate_data
 
 
 class LeducTrainer:
-  def __init__(self, train_iterations=10**1, num_players =2, random_seed = 42):
+  def __init__(self, train_iterations=10**1, num_players =2, random_seed = 42, save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 3
@@ -31,6 +31,7 @@ class LeducTrainer:
     self.card_rank = self.make_rank()
     self.history_action_player_dict = {}
     self.random_seed = random_seed
+    self.save_matplotlib = save_matplotlib
 
     self.random_seed_fix(self.random_seed)
 
@@ -596,6 +597,12 @@ class LeducTrainer:
   def train(self, n, m, memory_size_rl, memory_size_sl, wandb_save, rl_algo, sl_algo, pseudo_code):
     self.exploitability_list = {}
 
+    #追加 matplotlibで図を書くため
+    if self.save_matplotlib:
+      self.ex_name = "exploitability_for_{}_FSP".format(self.random_seed)
+      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+
+
     self.M_SL = [deque([], maxlen=memory_size_sl) for _ in range(self.NUM_PLAYERS)]
     self.M_RL = [deque([], maxlen=memory_size_rl) for _ in range(self.NUM_PLAYERS)]
 
@@ -605,9 +612,6 @@ class LeducTrainer:
 
     for target_player in range(self.NUM_PLAYERS):
       self.create_infoSets("", target_player, 1.0)
-
-    #追加 matplotlibで図を書くため
-    self.database_for_plot = {"iteration":[] ,"exploitability_FSP":[]}
 
 
     self.best_response_strategy = copy.deepcopy(self.avg_strategy)
@@ -688,8 +692,9 @@ class LeducTrainer:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t]})
 
         #追加 matplotlibで図を書くため
-        self.database_for_plot["iteration"].append(iteration_t)
-        self.database_for_plot["exploitability_FSP"].append(self.exploitability_list[iteration_t])
+        if self.save_matplotlib:
+          self.database_for_plot["iteration"].append(iteration_t)
+          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
     #self.show_plot("FSP")
