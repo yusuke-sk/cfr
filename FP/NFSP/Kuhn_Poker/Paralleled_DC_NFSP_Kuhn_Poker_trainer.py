@@ -23,7 +23,7 @@ import torch.nn as nn
 # _________________________________ Train class _________________________________
 class KuhnTrainer:
   def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=50
-  , whether_accurate_exploitability = True):
+  , whether_accurate_exploitability = True, save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 2
@@ -38,6 +38,7 @@ class KuhnTrainer:
     self.step_per_learning_update = step_per_learning_update
     self.batch_episode_num = batch_episode_num
     self.whether_accurate_exploitability = whether_accurate_exploitability
+    self.save_matplotlib = save_matplotlib
 
 
 # _________________________________ Train main method _________________________________
@@ -51,9 +52,10 @@ class KuhnTrainer:
     self.memory_size_rl = memory_size_rl
 
 
-    #追加 matplotlibで図を書くため
-    #self.ex_name = "exploitability_rate_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
-    #self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+    #追加 matplotlibで記録を集計するため
+    self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+    self.database_for_plot = {"iteration":[] ,self.batch_episode_name:[]}
+
 
 
     self.M_SL = []
@@ -86,8 +88,15 @@ class KuhnTrainer:
       #1 iteraion = 1episode を守る
       iteration_t *= self.batch_episode_num
 
-      #エピソード作成 ()
+      #エピソード作成
+      start_time = time.time()
       self.make_episodes_paralleled(self.batch_episode_num)
+      end_time = time.time()
+      if self.save_matplotlib :
+        make_episode_time = end_time - start_time
+        self.database_for_plot["iteration"].append(iteration_t)
+        self.database_for_plot[self.batch_episode_name].append(make_episode_time)
+
       #学習
       self.SL_and_RL_learn(iteration_t)
 
@@ -122,9 +131,6 @@ class KuhnTrainer:
       if self.wandb_save:
         wandb.log({'iteration': iteration_t, 'pseudo_exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t],  "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
 
-    #追加 matplotlibで図を書くため
-    #self.database_for_plot["iteration"].append(iteration_t)
-    #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
 
   def get_exploitability_and_optimal_gap(self):
     optimality_gap = 0
