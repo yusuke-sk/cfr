@@ -53,7 +53,7 @@ class KuhnTrainer:
 
 
     #追加 matplotlibで記録を集計するため
-    self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+    self.batch_episode_name = "parallel_batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
     self.database_for_plot = {"iteration":[] ,self.batch_episode_name:[]}
 
 

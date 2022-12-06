@@ -57,7 +57,7 @@ class KuhnTrainer:
 
 
     #追加 matplotlibで記録を集計するため
-    self.strategy_update_name = "strategy_update_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+    self.strategy_update_name = "prallel_strategy_update_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
     self.database_for_plot = {"iteration":[] ,self.strategy_update_name:[]}
 
 
