@@ -112,7 +112,7 @@ class KuhnTrainer:
       self.train_one_episode(history, iteration_t)
 
 
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.calculate_evalation_values(iteration_t)
 
 
