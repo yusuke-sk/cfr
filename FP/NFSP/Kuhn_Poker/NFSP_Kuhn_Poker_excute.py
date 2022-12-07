@@ -44,7 +44,7 @@ if __name__ == '__main__':
     collect_step_or_episode = ["step", "episode"][0],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     #rl
-    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
+    rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
     #result matplotlib
     save_matplotlib = [True, False][0],
   )
@@ -79,7 +79,7 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 1e-1,
+    rl_alpha = 1e-12,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
     alpha_discrease = [True, False][1],
     )
