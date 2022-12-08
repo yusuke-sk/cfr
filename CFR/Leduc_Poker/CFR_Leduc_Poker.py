@@ -8,7 +8,7 @@ import doctest
 import copy
 import math
 import wandb
-
+import time
 from tqdm import tqdm
 from collections import defaultdict
 
@@ -674,7 +674,7 @@ class LeducTrainer:
           self.outcome_sampling_MCCFR("", target_player_i, iteration_t, p_list, 1)
 
       #calculate expolitability
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         if config["wandb_save"]:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t]})
@@ -836,10 +836,11 @@ class LeducTrainer:
     assert exploitability >= 0
     return exploitability
 
+start_time = time.time()
 
 #config
 config = dict(
-  algo = ["vanilla_CFR", "chance_sampling_CFR", "external_sampling_MCCFR", "outcome_sampling_MCCFR"][3] ,
+  algo = ["vanilla_CFR", "chance_sampling_CFR", "external_sampling_MCCFR", "outcome_sampling_MCCFR"][1] ,
   train_iterations = 10**6,
   num_players =  2,
   random_seed = 42,
@@ -889,6 +890,15 @@ else:
     df = pd.DataFrame(leduc_trainer.database_for_plot)
     df = df.set_index('iteration')
     df.to_csv('../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["algo"]))
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    path = '../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_{}_{}.txt'.\
+      format(config["num_players"], config["algo"], config["random_seed"])
+
+    f = open(path, 'w')
+    f.write(str(total_time))
+    f.close()
 
 
 # calculate random strategy_profile exploitability

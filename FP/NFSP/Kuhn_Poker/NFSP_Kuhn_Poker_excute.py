@@ -37,7 +37,7 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 2,
+    num_players = 5,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][2-2],
     wandb_save = [True, False][1],
@@ -80,7 +80,7 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 1e+1,
+    rl_alpha = 5e+1,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
     alpha_discrease = [True, False][0],
     )
@@ -292,9 +292,9 @@ if __name__ == '__main__':
     else:
       #提案手法SQL
       if config["rl_algo"] == "sql":
-        df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+        df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
       else:
-        df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_NFSP_{}.csv'.format(config["num_players"], config["rl_algo"]))
+        df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"]))
 
       #実験時間の計測
       end_time = time.time()

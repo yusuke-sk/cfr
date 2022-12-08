@@ -23,10 +23,11 @@ import NFSP_Leduc_Poker_generate_data
 
 
 # _________________________________ config _________________________________
+start_time =time.time()
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**6,
+  iterations = 10**3,
   num_players = 2,
   wandb_save = [True, False][1],
   save_matplotlib = [True, False][0],
@@ -170,10 +171,20 @@ else:
     df = pd.DataFrame(leduc_trainer.database_for_plot)
     df = df.set_index('iteration')
     if config["rl_algo"] == "sql":
-      df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+      df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
     else:
-      df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_NFSP_{}.csv'.format(config["num_players"], config["rl_algo"]))
+      df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"]))
 
+      #実験時間の計測
+      end_time = time.time()
+      total_time = end_time - start_time
+      if config["rl_algo"] == "sql":
+        path = '../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_NFSP_{}_{}_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["random_seed"])
+      else:
+        path = '../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_NFSP_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["random_seed"])
 
+      f = open(path, 'w')
+      f.write(str(total_time))
+      f.close()
 
 doctest.testmod()

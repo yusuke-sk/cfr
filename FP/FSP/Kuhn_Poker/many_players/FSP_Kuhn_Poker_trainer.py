@@ -403,7 +403,7 @@ class KuhnTrainer:
           elif sl_algo == "mlp":
             SL.SL_train_MLP(self.M_SL[player_i], player_i, self.avg_strategy)
 
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 

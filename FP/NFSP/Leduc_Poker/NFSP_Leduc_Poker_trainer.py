@@ -114,12 +114,13 @@ class LeducTrainer:
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
 
 
-      self.train_one_episode(history, iteration_t)
+      #self.train_one_episode(history, iteration_t)
 
 
 
 
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
+
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 

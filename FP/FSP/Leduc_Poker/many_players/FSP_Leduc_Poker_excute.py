@@ -17,6 +17,7 @@ import wandb
 import FSP_Leduc_Poker_trainer
 
 
+start_time = time.time()
 #config
 config = dict(
   random_seed = [42][0],
@@ -92,6 +93,14 @@ if config["save_matplotlib"]:
   df = df.set_index('iteration')
   df.to_csv('../../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_FSP.csv'.format(config["num_players"], config["random_seed"]))
 
+  #実験時間の計測
+  end_time = time.time()
+  total_time = end_time - start_time
+  path = '../../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_FSP_{}.txt'.format(config["num_players"], config["random_seed"])
+
+  f = open(path, 'w')
+  f.write(str(total_time))
+  f.close()
 
 
 #for i in range(2,3):

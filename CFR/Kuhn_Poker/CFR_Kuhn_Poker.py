@@ -610,7 +610,7 @@ else:
 
     end_time = time.time()
     total_time = end_time - start_time
-    path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_{}_{}_{}.txt'.\
+    path = '../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_{}_{}.txt'.\
       format(config["num_players"], config["algo"], config["random_seed"])
 
     f = open(path, 'w')

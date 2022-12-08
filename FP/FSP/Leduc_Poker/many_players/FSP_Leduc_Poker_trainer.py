@@ -685,7 +685,7 @@ class LeducTrainer:
             SL.SL_train_MLP(self.M_SL[player_i], player_i, self.avg_strategy)
 
 
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
 
         if wandb_save:
