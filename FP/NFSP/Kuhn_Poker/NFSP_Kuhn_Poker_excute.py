@@ -36,7 +36,7 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**3,
+    iterations = 10**6,
     num_players = 2,
     #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][2-2],
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     collect_step_or_episode = ["step", "episode"][0],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     #rl
-    rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
+    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
     #result matplotlib
     save_matplotlib = [True, False][0],
   )
@@ -80,9 +80,9 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 1e-12,
+    rl_alpha = 1e+1,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
-    alpha_discrease = [True, False][1],
+    alpha_discrease = [True, False][0],
     )
 
     config.update(config_plus)
@@ -286,24 +286,26 @@ if __name__ == '__main__':
     df = df.set_index('iteration')
 
     #並列化
-    #df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["parallelized"]))
+    if config["parallelized"] in ["DataCollect","StrategyUpdate"] or config["collect_step_or_episode"] ==  "episode":
+      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["parallelized"]))
 
-    #提案手法SQL
-    #if config["rl_algo"] == "sql":
-    #  df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["rl_algo"], #config["rl_alpha"], config["alpha_discrease"]))
-    #else:
-    #  df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_NFSP_{}.csv'.format(config["num_players"], config["rl_algo"]))
-
-    #実験時間の計測
-    end_time = time.time()
-    total_time = end_time - start_time
-    if config["rl_algo"] == "sql":
-      path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_NFSP_{}_{}_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["radom_seed"])
     else:
-      path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_NFSP_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["random_seed"])
+      #提案手法SQL
+      if config["rl_algo"] == "sql":
+        df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
+      else:
+        df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_NFSP_{}.csv'.format(config["num_players"], config["rl_algo"]))
 
-    f = open(path, 'w')
-    f.write(str(total_time))
-    f.close()
+      #実験時間の計測
+      end_time = time.time()
+      total_time = end_time - start_time
+      if config["rl_algo"] == "sql":
+        path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_NFSP_{}_{}_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["random_seed"])
+      else:
+        path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_NFSP_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["random_seed"])
+
+      f = open(path, 'w')
+      f.write(str(total_time))
+      f.close()
 
   doctest.testmod()

@@ -8,7 +8,7 @@ import doctest
 import copy
 import math
 import wandb
-
+import time
 from tqdm import tqdm
 from collections import defaultdict
 
@@ -426,7 +426,7 @@ class KuhnTrainer:
           self.outcome_sampling_MCCFR("", target_player_i, iteration_t, p_list, 1)
 
       #calculate expolitability
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)] :
+      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_strategy(target_player_i=0)
 
@@ -555,7 +555,7 @@ class KuhnTrainer:
     return exploitability
 
 
-
+start_time = time.time()
 #config
 config = dict(
   algo = ["vanilla_CFR", "chance_sampling_CFR", "external_sampling_MCCFR", "outcome_sampling_MCCFR"][3],
@@ -606,6 +606,17 @@ else:
     df = pd.DataFrame(kuhn_trainer.database_for_plot)
     df = df.set_index('iteration')
     df.to_csv('../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["algo"]))
+
+
+    end_time = time.time()
+    total_time = end_time - start_time
+    path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_{}_{}_{}.txt'.\
+      format(config["num_players"], config["algo"], config["random_seed"])
+
+    f = open(path, 'w')
+    f.write(str(total_time))
+    f.close()
+
 
 
 
