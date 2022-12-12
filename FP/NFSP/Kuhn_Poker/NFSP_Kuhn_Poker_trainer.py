@@ -73,10 +73,6 @@ class KuhnTrainer:
     for target_player in range(self.NUM_PLAYERS):
       self.create_infoSets("", target_player, 1.0)
 
-    #calculate random strategy exploitability
-    #self.random_strategy_exploitability = self.get_exploitability_dfs()
-    #print(self.random_strategy_exploitability, len(self.avg_strategy.keys()))
-    #exit()
     self.random_strategy_exploitability = [0.916, 2.063, 3.476, 5.011, 6.631][self.NUM_PLAYERS - 2]
 
 
@@ -117,9 +113,6 @@ class KuhnTrainer:
 
 
   def calculate_evalation_values(self, iteration_t):
-    #self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
-    self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
-
     if self.whether_accurate_exploitability == "Dont_calculate":
       return
 
@@ -127,12 +120,16 @@ class KuhnTrainer:
       self.optimal_gap, self.dfs_exploitability , self.current_br_exploitability = self.get_exploitability_and_optimal_gap()
       self.exploitability_list[iteration_t] = self.dfs_exploitability
 
+      self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
+
+
       if self.wandb_save:
         wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimal_gap, "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
 
     else:
       self.current_br_exploitability = self.get_current_br_exploitability()
       self.exploitability_list[iteration_t] = self.current_br_exploitability
+      self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
 
       if self.wandb_save:
@@ -145,6 +142,11 @@ class KuhnTrainer:
 
 
   def get_exploitability_and_optimal_gap(self):
+    #最適反応戦略と平均戦略のテーブルを更新: change
+    self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
+    self.SL.update_strategy_for_table(self.avg_strategy)
+
+
     optimality_gap = 0
     self.infoSets_dict = {}
     for target_player in range(self.NUM_PLAYERS):
@@ -163,7 +165,12 @@ class KuhnTrainer:
     assert optimality_gap >= 0
     return optimality_gap , dfs_exploitability, current_br_exploitability
 
+
   def get_current_br_exploitability(self):
+    #最適反応戦略と平均戦略のテーブルを更新: change
+    self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
+    self.SL.update_strategy_for_table(self.avg_strategy)
+
     current_br_exploitability = 0
     for player_i in range(self.NUM_PLAYERS):
       current_br_exploitability += self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i)
@@ -198,18 +205,12 @@ class KuhnTrainer:
 
 
       if self.sigma_strategy_bit[player] == 0:
-        if self.rl_algo in ["dqn" , "dfs" , "ddqn", "sql"]:
-          sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s])
-
-        elif self.rl_algo == "sac":
-          s_bit = torch.Tensor(self.make_state_bit(s))
-          sampling_action = self.RL.action_step(s_bit)
-        else:
-          raise Exception('Error!')
-
+        #sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s]) : change
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
 
       elif self.sigma_strategy_bit[player] == 1:
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s])
+        #sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s]) : change
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.SL.action_step(torch.Tensor(self.make_state_bit(s))))
 
 
       a = ("p" if sampling_action == 0 else "b")

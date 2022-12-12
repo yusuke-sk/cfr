@@ -15,39 +15,34 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
-
-
 from collections import defaultdict
 from tqdm import tqdm
 from collections import deque
-
 import NFSP_Kuhn_Poker_trainer
 import Episodic_NFSP_Kuhn_Poker_trainer
 import Paralleled_DC_NFSP_Kuhn_Poker_trainer
 import Paralleled_SU_NFSP_Kuhn_Poker_trainer
 import NFSP_Kuhn_Poker_supervised_learning
-import NFSP_Kuhn_Poker_reinforcement_learning_DQN
+import NFSP_Kuhn_Poker_reinforcement_learning
 import NFSP_Kuhn_Poker_generate_data
 
 
 if __name__ == '__main__':
 # _________________________________ config _________________________________
+
   start_time = time.time()
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
     num_players = 5,
-    #parallelized
     batch_episode_num = [40, 30, 20, 20, 15][2-2],
-    wandb_save = [True, False][1],
+    wandb_save = [True, False][0],
     parallelized = ["DataCollect","StrategyUpdate", False][2],
     collect_step_or_episode = ["step", "episode"][0],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
-    #rl
     rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
-    #result matplotlib
-    save_matplotlib = [True, False][0],
+    save_matplotlib = [True, False][1],
   )
 
 
@@ -66,7 +61,7 @@ if __name__ == '__main__':
     sl_loss_function = [nn.BCEWithLogitsLoss()][0],
     sl_algo = ["cnt", "mlp"][1],
 
-    #dqn 用
+    #dqn
     rl_lr = 0.1,
     rl_hidden_units_num= 64,
     rl_epochs = 2,
@@ -75,6 +70,7 @@ if __name__ == '__main__':
     rl_tau = 0.1,
     rl_update_frequency = 30,
     rl_loss_function = [F.mse_loss, nn.HuberLoss()][0],
+
     # device
     #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
     device = torch.device('cpu'),
@@ -194,7 +190,7 @@ if __name__ == '__main__':
 
 
   if config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"]:
-    kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning_DQN.ReinforcementLearning(
+    kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning.ReinforcementLearning(
       random_seed = config["random_seed"],
       train_iterations = config["iterations"],
       num_players= config["num_players"],

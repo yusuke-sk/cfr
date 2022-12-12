@@ -125,6 +125,19 @@ class SupervisedLearning:
 
 
 
+
+
+
+  def action_step(self, state_bit):
+    with torch.no_grad():
+      outputs = torch.sigmoid(self.sl_network.forward(state_bit)).detach().numpy()
+
+      return np.array([1.0-outputs[0], outputs[0]])
+
+
+
+
+  def update_strategy_for_table(self, update_strategy):
     # eval
     self.sl_network.eval()
     with torch.no_grad():

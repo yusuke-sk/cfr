@@ -210,7 +210,7 @@ class KuhnTrainer:
 
       elif self.sigma_strategy_bit[player] == 1:
 
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.SL.action_step(torch.Tensor(self.make_state_bit(s))))
 
 
       a = ("p" if sampling_action == 0 else "b")
