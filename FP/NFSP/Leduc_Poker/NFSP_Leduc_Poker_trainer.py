@@ -114,7 +114,7 @@ class LeducTrainer:
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
 
 
-      #self.train_one_episode(history, iteration_t)
+      self.train_one_episode(history, iteration_t)
 
 
 

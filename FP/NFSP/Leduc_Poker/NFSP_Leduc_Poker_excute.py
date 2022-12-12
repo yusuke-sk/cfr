@@ -27,7 +27,7 @@ start_time =time.time()
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**3,
+  iterations = 10**6,
   num_players = 2,
   wandb_save = [True, False][1],
   save_matplotlib = [True, False][0],
@@ -54,7 +54,7 @@ config = dict(
   sl_algo = ["cnt", "mlp"][1],
   rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
   #sql
-  rl_alpha = 1e+1,
+  rl_alpha = 5e+1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
   alpha_discrease = [True, False][0],
 )
@@ -175,16 +175,17 @@ else:
     else:
       df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"]))
 
-      #実験時間の計測
-      end_time = time.time()
-      total_time = end_time - start_time
-      if config["rl_algo"] == "sql":
-        path = '../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_NFSP_{}_{}_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["random_seed"])
-      else:
-        path = '../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_NFSP_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["random_seed"])
+    #実験時間の計測
+    end_time = time.time()
+    total_time = end_time - start_time
+    if config["rl_algo"] == "sql":
+      path = '../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_NFSP_{}_{}_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["random_seed"])
 
-      f = open(path, 'w')
-      f.write(str(total_time))
-      f.close()
+    else:
+      path = '../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_NFSP_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["random_seed"])
+
+    f = open(path, 'w')
+    f.write(str(total_time))
+    f.close()
 
 doctest.testmod()
