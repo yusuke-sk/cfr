@@ -52,7 +52,7 @@ config = dict(
   rl_tau = 0.1,
   rl_update_frequency = 300,
   sl_algo = ["cnt", "mlp"][1],
-  rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
+  rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
   #sql
   rl_alpha = 5e+1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],
