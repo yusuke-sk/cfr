@@ -170,24 +170,23 @@ class ReinforcementLearning:
 
 
   def action_step(self, state_bit):
-      if (self.rl_algo in ["dqn" , "ddqn"]) or (self.rl_algo == "sql" and  self.rl_strategy == "ε-greedy"):
-        self.deep_q_network.eval()
-        with torch.no_grad():
-          outputs = self.deep_q_network.forward(state_bit).detach().numpy()
+    self.deep_q_network.eval()
+    with torch.no_grad():
+      outputs = self.deep_q_network.forward(state_bit).detach().numpy()
 
 
-          if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
-            action = np.random.randint(self.num_actions)
-            if action == 0:
-              return np.array([1, 0], dtype=float)
-            else:
-              return np.array([0, 1], dtype=float)
+      if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
+        action = np.random.randint(self.num_actions)
+        if action == 0:
+          return np.array([1, 0], dtype=float)
+        else:
+          return np.array([0, 1], dtype=float)
 
-          else:
-            if outputs[0] > outputs[1]:
-              return np.array([1, 0], dtype=float)
-            else:
-              return np.array([0, 1], dtype=float)
+      else:
+        if outputs[0] > outputs[1]:
+          return np.array([1, 0], dtype=float)
+        else:
+          return np.array([0, 1], dtype=float)
 
 
   def update_strategy_for_table(self, update_strategy):

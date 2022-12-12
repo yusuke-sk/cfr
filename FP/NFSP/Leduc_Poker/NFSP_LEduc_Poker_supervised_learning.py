@@ -110,6 +110,8 @@ class SupervisedLearning:
       targets = torch.tensor(train_y).long().reshape(-1, 1).squeeze_()
 
       outputs = self.sl_network.forward(inputs)
+
+
       loss = self.loss_fn(outputs, targets)
 
       self.optimizer.zero_grad()
@@ -125,16 +127,36 @@ class SupervisedLearning:
 
 
 
+  def action_step(self, node_X):
+    self.sl_network.eval()
+    with torch.no_grad():
+        inputs_eval = torch.tensor(self.leduc_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN)
+        strategy = self.softmax(self.sl_network.forward(inputs_eval)).detach().numpy()[0]
+
+        possible_action_list = self.leduc_trainer.node_possible_action[node_X]
+
+        normalizationSum = 0
+        for action_i, yi in enumerate(strategy):
+          if action_i not in possible_action_list:
+            strategy[action_i] = 0
+          else:
+            normalizationSum += yi
+
+        strategy /= normalizationSum
+
+
+        return  strategy
+
+
+
+  def update_strategy_for_table(self, update_strategy):
     # eval
     self.sl_network.eval()
     with torch.no_grad():
       for node_X , _ in update_strategy.items():
 
         inputs_eval = torch.tensor(self.leduc_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN)
-
         y = self.softmax(self.sl_network.forward(inputs_eval)).detach().numpy()[0]
-
-
         possible_action_list = self.leduc_trainer.node_possible_action[node_X]
 
 
@@ -147,6 +169,7 @@ class SupervisedLearning:
 
         y /= normalizationSum
         update_strategy[node_X] = y
+
 
 
 

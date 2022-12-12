@@ -27,10 +27,10 @@ start_time =time.time()
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**6,
+  iterations = 10**5,
   num_players = 2,
-  wandb_save = [True, False][1],
-  save_matplotlib = [True, False][0],
+  wandb_save = [True, False][0],
+  save_matplotlib = [True, False][1],
 
   #train
   eta = 0.1,

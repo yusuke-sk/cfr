@@ -75,6 +75,7 @@ class ReinforcementLearning:
 
     self.update_count =  0
     self.save_count = 0
+    self.epsilon = 0
 
 
   def RL_learn(self, memory, target_player, update_strategy, k):
@@ -181,12 +182,44 @@ class ReinforcementLearning:
         self.deep_q_network_target.load_state_dict(self.deep_q_network.state_dict())
 
 
+    if self.leduc_trainer.wandb_save and self.save_count % 100 == 0:
+      wandb.log({'iteration': k, 'loss_rl_{}'.format(target_player):  np.mean(total_loss)})
+    self.save_count += 1
+
+
+
+  def action_step(self, node_X):
+    self.deep_q_network.eval()
+    with torch.no_grad():
+      inputs_eval = torch.Tensor(self.leduc_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN)
+      y = self.deep_q_network.forward(inputs_eval).detach().numpy()
+      action_list = self.leduc_trainer.node_possible_action[node_X]
+      if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
+        action = np.random.choice(action_list)
+        strategy = np.array([0 for _ in range(self.num_actions)], dtype=float)
+        strategy[action] = 1.0
+
+        return strategy
+
+      else:
+        max_idx = action_list[0]
+
+        for ai in action_list:
+          if y[0][ai] >= y[0][max_idx]:
+            max_idx = ai
+        strategy = np.array([0 for _ in range(self.num_actions)], dtype=float)
+        strategy[max_idx] = 1.0
+
+        return strategy
+
+
+  def update_strategy_for_table(self, update_strategy):
     #eval
     self.deep_q_network.eval()
     with torch.no_grad():
       for node_X , _ in update_strategy.items():
 
-        inputs_eval = torch.tensor(self.leduc_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN)
+        inputs_eval = torch.Tensor(self.leduc_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN)
         y = self.deep_q_network.forward(inputs_eval).detach().numpy()
 
         if np.random.uniform() < self.epsilon:   # 探索(epsilonの確率で)
@@ -203,11 +236,6 @@ class ReinforcementLearning:
               max_idx = ai
           update_strategy[node_X] = np.array([0 for _ in range(self.num_actions)], dtype=float)
           update_strategy[node_X][max_idx] = 1.0
-
-
-    if self.leduc_trainer.wandb_save and self.save_count % 100 == 0:
-      wandb.log({'iteration': k, 'loss_rl_{}'.format(target_player):  np.mean(total_loss)})
-    self.save_count += 1
 
 
 

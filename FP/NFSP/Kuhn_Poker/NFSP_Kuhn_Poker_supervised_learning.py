@@ -123,17 +123,11 @@ class SupervisedLearning:
     self.save_count += 1
 
 
-
-
-
-
-
   def action_step(self, state_bit):
     with torch.no_grad():
       outputs = torch.sigmoid(self.sl_network.forward(state_bit)).detach().numpy()
 
       return np.array([1.0-outputs[0], outputs[0]])
-
 
 
 
