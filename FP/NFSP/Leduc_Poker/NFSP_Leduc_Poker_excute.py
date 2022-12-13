@@ -27,7 +27,7 @@ start_time =time.time()
 
 config = dict(
   random_seed = [42, 1000, 10000][0],
-  iterations = 10**5,
+  iterations = 10**6,
   num_players = 2,
   wandb_save = [True, False][0],
   save_matplotlib = [True, False][1],
@@ -52,7 +52,7 @@ config = dict(
   rl_tau = 0.1,
   rl_update_frequency = 300,
   sl_algo = ["cnt", "mlp"][1],
-  rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
+  rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
   #sql
   rl_alpha = 5e+1,
   rl_strategy = ["ε-greedy", "proportional_Q"][0],

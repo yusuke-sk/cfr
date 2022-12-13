@@ -182,6 +182,7 @@ class ReinforcementLearning:
         self.deep_q_network_target.load_state_dict(self.deep_q_network.state_dict())
 
 
+
     if self.leduc_trainer.wandb_save and self.save_count % 100 == 0:
       wandb.log({'iteration': k, 'loss_rl_{}'.format(target_player):  np.mean(total_loss)})
     self.save_count += 1

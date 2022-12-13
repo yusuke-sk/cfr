@@ -124,8 +124,6 @@ class LeducTrainer:
         self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
         self.SL.update_strategy_for_table(self.avg_strategy)
 
-        print(iteration_t, self.avg_strategy["KrrcKrr"])
-
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
@@ -179,57 +177,56 @@ class LeducTrainer:
           self.player_sars_list[player] = {"s":None, "a":None, "r":None, "s_prime":None}
 
 
-      if self.sigma_strategy_bit[player] == 0:
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(s))
+        if self.sigma_strategy_bit[player] == 0:
+          sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(s))
 
-      elif self.sigma_strategy_bit[player] == 1:
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.SL.action_step(s))
+        elif self.sigma_strategy_bit[player] == 1:
+          sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.SL.action_step(s))
 
+        a = self.ACTION_DICT[sampling_action]
+        history  += a
+        r = 0
 
-      a = self.ACTION_DICT[sampling_action]
-      history  += a
-      r = 0
-
-      self.player_sars_list[player]["s"] = s
-      self.player_sars_list[player]["a"] = a
-      self.player_sars_list[player]["r"] = r
-
-
-      if self.sigma_strategy_bit[player] == 0:
-        if self.sl_algo == "mlp":
-          sa_bit = self.from_episode_to_bit([(s, a)])
-          self.reservior_add(self.M_SL,sa_bit)
-        else:
-          self.reservior_add(self.M_SL,(s, a))
+        self.player_sars_list[player]["s"] = s
+        self.player_sars_list[player]["a"] = a
+        self.player_sars_list[player]["r"] = r
 
 
-      self.game_step_count += 1
-
-      if self.game_step_count % self.RL.sampling_num == 0:
-
-        # SL update
-        if self.sl_algo == "mlp":
-          self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
-        elif self.sl_algo == "cnt":
-          self.SL.SL_train_AVG(self.M_SL, player, self.avg_strategy, self.N_count)
-          self.M_SL = []
-
-        # RL update
-        if self.rl_algo in ["dqn", "ddqn", "sql"] :
-          self.RL.rl_algo = self.rl_algo
-          self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
+        if self.sigma_strategy_bit[player] == 0:
+          if self.sl_algo == "mlp":
+            sa_bit = self.from_episode_to_bit([(s, a)])
+            self.reservior_add(self.M_SL,sa_bit)
+          else:
+            self.reservior_add(self.M_SL,(s, a))
 
 
-        elif self.rl_algo == "dfs":
-          self.infoSets_dict_player = [[] for _ in range(self.NUM_PLAYERS)]
-          self.infoSets_dict = {}
-          self.infoset_action_player_dict = {}
+        self.game_step_count += 1
 
-          for target_player in range(self.NUM_PLAYERS):
-            self.create_infoSets("", target_player, 1.0)
-          self.epsilon_greedy_q_learning_strategy = {}
-          for best_response_player_i in range(self.NUM_PLAYERS):
-              self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
+        if self.game_step_count % self.RL.sampling_num == 0:
+
+          # SL update
+          if self.sl_algo == "mlp":
+            self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
+          elif self.sl_algo == "cnt":
+            self.SL.SL_train_AVG(self.M_SL, player, self.avg_strategy, self.N_count)
+            self.M_SL = []
+
+          # RL update
+          if self.rl_algo in ["dqn", "ddqn", "sql"] :
+            self.RL.rl_algo = self.rl_algo
+            self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
+
+
+          elif self.rl_algo == "dfs":
+            self.infoSets_dict_player = [[] for _ in range(self.NUM_PLAYERS)]
+            self.infoSets_dict = {}
+            self.infoset_action_player_dict = {}
+
+            for target_player in range(self.NUM_PLAYERS):
+              self.create_infoSets("", target_player, 1.0)
+            self.epsilon_greedy_q_learning_strategy = {}
+            for best_response_player_i in range(self.NUM_PLAYERS):
+                self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
 
