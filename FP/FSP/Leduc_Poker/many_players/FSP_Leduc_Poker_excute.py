@@ -99,7 +99,8 @@ if config["save_matplotlib"]:
   path = '../../../../Other/Make_png/output/Leduc_Poker/Time/time_{}players_FSP_{}.txt'.format(config["num_players"], config["random_seed"])
 
   f = open(path, 'w')
-  f.write(str(total_time))
+  f.write("合計時間: " + str(round(total_time,2)) +  "\n")
+  f.write("可搾取量計算時間: " + str(round(leduc_trainer.exploitability_time,2)) +  "\n")
   f.close()
 
 

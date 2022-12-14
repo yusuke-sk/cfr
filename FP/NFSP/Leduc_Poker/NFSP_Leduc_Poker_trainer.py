@@ -41,6 +41,9 @@ class LeducTrainer:
     self.random_seed_fix(self.random_seed)
     self.save_matploitlib = save_matplotlib
 
+    #可搾取量の合計計算時間
+    self.exploitability_time = 0
+
 # _________________________________ Train main method _________________________________
   def train(self, eta, memory_size_rl, memory_size_sl, rl_algo, sl_algo, rl_module, sl_module, gd_module):
     self.exploitability_list = {}
@@ -118,7 +121,7 @@ class LeducTrainer:
 
 
 
-
+      start_calc_exploitability = time.time()
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         #最適反応戦略と平均戦略のテーブルを更新: change
         self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
@@ -150,6 +153,8 @@ class LeducTrainer:
         if self.save_matploitlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+      end_calc_exploitability = time.time()
+      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
 
 # _________________________________ Train second main method _________________________________

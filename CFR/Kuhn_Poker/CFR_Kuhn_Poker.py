@@ -72,6 +72,8 @@ class KuhnTrainer:
 
     self.save_matplotlib = save_matplotlib
 
+    #可搾取量の合計計算時間
+    self.exploitability_time = 0
 
   def random_seed_fix(self, random_seed):
       random.seed(random_seed)
@@ -425,6 +427,7 @@ class KuhnTrainer:
           self.epsilon = 0.6
           self.outcome_sampling_MCCFR("", target_player_i, iteration_t, p_list, 1)
 
+      start_calc_exploitability = time.time()
       #calculate expolitability
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
@@ -438,6 +441,8 @@ class KuhnTrainer:
         if self.save_matplotlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+      end_calc_exploitability = time.time()
+      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
 
 
@@ -614,7 +619,8 @@ else:
       format(config["num_players"], config["algo"], config["random_seed"])
 
     f = open(path, 'w')
-    f.write(str(total_time))
+    f.write("合計時間: " + str(round(total_time,2)) +  "\n")
+    f.write("可搾取量計算時間: " + str(round(kuhn_trainer.exploitability_time,2)) +  "\n")
     f.close()
 
 

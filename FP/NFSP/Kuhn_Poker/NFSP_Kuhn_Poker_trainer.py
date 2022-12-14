@@ -43,6 +43,9 @@ class KuhnTrainer:
     self.save_matplotlib = save_matplotlib
 
 
+    #可搾取量の合計計算時間
+    self.exploitability_time = 0
+
 # _________________________________ Train main method _________________________________
   def train(self, eta, memory_size_rl, memory_size_sl, rl_algo, sl_algo, rl_module, sl_module, gd_module):
     self.exploitability_list = {}
@@ -108,8 +111,11 @@ class KuhnTrainer:
       self.train_one_episode(history, iteration_t)
 
 
+      start_calc_exploitability = time.time()
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.calculate_evalation_values(iteration_t)
+      end_calc_exploitability = time.time()
+      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
 
   def calculate_evalation_values(self, iteration_t):

@@ -35,13 +35,13 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 10**6,
-    num_players = 5,
+    num_players = 2,
     batch_episode_num = [40, 30, 20, 20, 15][2-2],
     wandb_save = [True, False][1],
     parallelized = ["DataCollect","StrategyUpdate", False][2],
     collect_step_or_episode = ["step", "episode"][0],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
-    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
+    rl_algo = ["dfs", "dqn", "ddqn", "sql"][1],
     save_matplotlib = [True, False][0],
   )
 
@@ -301,7 +301,9 @@ if __name__ == '__main__':
         path = '../../../Other/Make_png/output/Kuhn_Poker/Time/time_{}players_NFSP_{}_{}.txt'.format(config["num_players"], config["rl_algo"], config["random_seed"])
 
       f = open(path, 'w')
-      f.write(str(total_time))
+      f.write("合計時間: " + str(round(total_time,2)) +  "\n")
+      f.write("可搾取量計算時間: " + str(round(kuhn_trainer.exploitability_time,2)) +  "\n")
+
       f.close()
 
   doctest.testmod()

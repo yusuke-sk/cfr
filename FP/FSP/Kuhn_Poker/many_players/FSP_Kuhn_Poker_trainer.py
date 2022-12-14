@@ -34,6 +34,8 @@ class KuhnTrainer:
 
     self.random_seed_fix(self.random_seed)
 
+    #可搾取量の合計計算時間
+    self.exploitability_time = 0
 
 
   def make_rank(self, num_players):
@@ -403,6 +405,7 @@ class KuhnTrainer:
           elif sl_algo == "mlp":
             SL.SL_train_MLP(self.M_SL[player_i], player_i, self.avg_strategy)
 
+      start_calc_exploitability = time.time()
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
@@ -439,6 +442,8 @@ class KuhnTrainer:
         if self.save_matplotlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+      end_calc_exploitability = time.time()
+      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
 
 

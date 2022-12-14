@@ -35,6 +35,10 @@ class LeducTrainer:
 
     self.random_seed_fix(self.random_seed)
 
+    #可搾取量の合計計算時間
+    self.exploitability_time = 0
+
+
   def Get_possible_action_by_information_set(self, infoset): #{0:"f", 1:"c", 2:"r"}
     """return int
     >>> LeducTrainer().Get_possible_action_by_information_set("JccKc")
@@ -685,6 +689,7 @@ class LeducTrainer:
             SL.SL_train_MLP(self.M_SL[player_i], player_i, self.avg_strategy)
 
 
+      start_calc_exploitability = time.time()
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
 
@@ -695,6 +700,8 @@ class LeducTrainer:
         if self.save_matplotlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+      end_calc_exploitability = time.time()
+      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
 
     #self.show_plot("FSP")
