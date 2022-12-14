@@ -29,8 +29,8 @@ config = dict(
   random_seed = [42, 1000, 10000][0],
   iterations = 10**6,
   num_players = 2,
-  wandb_save = [True, False][0],
-  save_matplotlib = [True, False][1],
+  wandb_save = [True, False][1],
+  save_matplotlib = [True, False][0],
 
   #train
   eta = 0.1,

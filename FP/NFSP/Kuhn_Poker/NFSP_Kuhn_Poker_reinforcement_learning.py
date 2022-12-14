@@ -77,6 +77,7 @@ class ReinforcementLearning:
     self.loss_fn = loss_function
 
     self.update_count =  0
+    self.epsilon = 0
 
 
   def RL_learn(self, memory, update_strategy, k):
