@@ -202,7 +202,7 @@ class KuhnTrainer:
     #50episode 作成するのに about 1.2s かかっている
     queue_SL, queue_RL = Queue(), Queue()
 
-    process1 = Process(target=self.make_episodes, args=(episode_num, queue_SL, queue_RL))
+    process1 = Process(target=self.make_episodes, args=(0, queue_SL, queue_RL))
     #process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
     #process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
 
@@ -675,6 +675,10 @@ class KuhnTrainer:
 
 
 
+
+#並列化の部分だけ実行してみる
+test_trainer = KuhnTrainer().make_episodes_paralleled(episode_num=0)
+print(2)
 
 
 doctest.testmod()
