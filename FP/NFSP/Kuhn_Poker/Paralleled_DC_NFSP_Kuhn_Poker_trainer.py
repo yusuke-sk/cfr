@@ -9,9 +9,7 @@ import numpy as np
 import random
 import itertools
 import copy
-import wandb
 import torch
-import torch.nn as nn
 
 
 
@@ -113,23 +111,16 @@ class KuhnTrainer:
 
       self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
-
-      if self.wandb_save:
-        wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimal_gap, "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
-
     else:
       self.current_br_exploitability = self.get_current_br_exploitability()
       self.exploitability_list[iteration_t] = self.current_br_exploitability
       self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
 
-      if self.wandb_save:
-        wandb.log({'iteration': iteration_t, 'pseudo_exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t],  "exploitability rate":  self.exploitability_list[iteration_t]/self.random_strategy_exploitability})
-
     #追加 matplotlibで図を書くため
     if self.save_matplotlib:
       self.database_for_plot["iteration"].append(iteration_t)
-      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+      self.database_for_plot[self.batch_episode_name].append(self.exploitability_list[iteration_t])
 
 
   def get_exploitability_and_optimal_gap(self):
@@ -196,24 +187,21 @@ class KuhnTrainer:
     a = time.time()
     #50episode 作成するのに about 1.2s かかっている
     queue_SL, queue_RL = Queue(), Queue()
-    process1 = Process(target=self.make_str_episode, args=(episode_num,queue_RL))
-    #process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
-    #process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
+    process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
+    process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
 
     b = time.time()
 
 
     process1.start()
-    #process2.start()
+    process2.start()
 
     c = time.time()
 
     process1.join()
-    #process2.join()
+    process2.join()
 
     d = time.time()
-
-    print(d-b, d-c, c-b, b-a)
 
     while not queue_RL.empty():
       for data_RL in queue_RL.get():

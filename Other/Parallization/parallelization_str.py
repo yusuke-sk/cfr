@@ -5,21 +5,23 @@ from collections import deque
 import random
 
 #この5つが時間かかる原因 1s → 0.11 (0.9s の削減にはなっている)
-import torch.nn as nn  #そもそも使ってない
-import wandb #計算時間はかるだけだとなくていい
-import matplotlib.pyplot as plt # そもそも使っていない
-import torch #使っているけど、使わないように変更することは可能
-import pandas as pd #そもそも使っていない
+#import torch.nn as nn  #そもそも使ってない
+#import wandb #計算時間はかるだけだとなくていい
+#import matplotlib.pyplot as plt # そもそも使っていない
+#import torch #使っているけど、使わないように変更することは可能
+#import pandas as pd #そもそも使っていない
 
 
 #下のライブラリで(0.05sかかっている)
-import numpy as np
-import itertools
-from collections import defaultdict
+from multiprocessing import Process, Queue
 from tqdm import tqdm
-import doctest
-import copy
 from collections import deque
+import time
+import numpy as np
+import random
+import itertools
+import copy
+import torch
 
 
 
@@ -106,16 +108,16 @@ class Toy:
 
 
 if __name__ == '__main__':
-    #toy_trainer = Toy1()
-    #toy_trainer.make_episodes_paralleled(episode_num=0)
+    toy_trainer = Toy1()
+    toy_trainer.make_episodes_paralleled(episode_num=0)
 
-
+    """
     iteration = 10
     toy_trainer = Toy(episode_num = 10)
     for _ in range(iteration):
         toy_trainer.make_episodes_paralleled()
         toy_trainer.count_and_delte()
-
+    """
 
 
 
