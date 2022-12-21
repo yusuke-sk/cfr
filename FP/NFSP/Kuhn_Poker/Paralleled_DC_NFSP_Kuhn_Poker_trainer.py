@@ -2,19 +2,14 @@
 # _________________________________ Library _________________________________
 
 from multiprocessing import Process, Queue
+from tqdm import tqdm
+from collections import deque
+import time
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import random
 import itertools
-from collections import defaultdict
-from tqdm import tqdm
-import time
-import doctest
 import copy
-from collections import deque
 import wandb
-
 import torch
 import torch.nn as nn
 
@@ -201,8 +196,7 @@ class KuhnTrainer:
     a = time.time()
     #50episode 作成するのに about 1.2s かかっている
     queue_SL, queue_RL = Queue(), Queue()
-
-    process1 = Process(target=self.make_episodes, args=(0, queue_SL, queue_RL))
+    process1 = Process(target=self.make_str_episode, args=(episode_num,queue_RL))
     #process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
     #process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
 
@@ -219,7 +213,7 @@ class KuhnTrainer:
 
     d = time.time()
 
-    print(d-b, d-c, c-b)
+    print(d-b, d-c, c-b, b-a)
 
     while not queue_RL.empty():
       for data_RL in queue_RL.get():
@@ -232,6 +226,22 @@ class KuhnTrainer:
 
     #print(len(self.M_RL), len(self.M_SL))
 
+
+  def make_str_episode(self, iter, queue):
+      str_list = ["a", "b", "c", "d", "e","f", "g", "h", "i", "j"]
+      """
+      for ii in range(iter):
+          result = ""
+          not_j = True
+          while not_j:
+              ri = random.randint(0,9)
+              st = str_list[ri]
+              result += st
+              if st == "j":
+                  not_j = False
+              time.sleep(0.01)
+          queue.put(result)
+      """
 
 
   def make_episodes(self, num, queue_SL, queue_RL):
@@ -672,13 +682,3 @@ class KuhnTrainer:
           X_bit[(self.NUM_PLAYERS+1) + 2*idx +1] = 1
 
     return X_bit
-
-
-
-
-#並列化の部分だけ実行してみる
-test_trainer = KuhnTrainer().make_episodes_paralleled(episode_num=0)
-print(2)
-
-
-doctest.testmod()
