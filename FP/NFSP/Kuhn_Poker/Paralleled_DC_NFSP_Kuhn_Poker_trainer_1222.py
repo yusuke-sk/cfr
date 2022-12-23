@@ -75,12 +75,6 @@ class KuhnTrainer:
     for node, cn in self.N_count.items():
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
-
-    #プロセス立ち上げ
-    q_in, q_out_sl, q_out_rl = Queue(), Queue(), Queue()
-    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in, q_out_sl, q_out_rl))
-
-
     #並列化の準備
     for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
@@ -89,24 +83,12 @@ class KuhnTrainer:
 
       #エピソード作成
       start_time = time.time()
-
-      q_in.put([self.batch_episode_num, self.SL, self.RL])
-
+      self.make_episodes_paralleled(self.batch_episode_num)
       end_time = time.time()
       if self.save_matplotlib :
         make_episode_time = end_time - start_time
         self.database_for_plot["iteration"].append(iteration_t)
         self.database_for_plot[self.batch_episode_name].append(make_episode_time)
-
-
-      #queueに溜まってるデータがあれば、取り出す
-      while not q_out_sl.empty():
-        for data_SL in q_out_sl.get():
-          self.reservior_add(self.M_SL,data_SL)
-      while not q_out_rl.empty():
-        for data_RL in q_out_rl.get():
-          self.M_RL.append(data_RL)
-
 
       #学習
       self.SL_and_RL_learn(iteration_t)
@@ -139,34 +121,6 @@ class KuhnTrainer:
     if self.save_matplotlib:
       self.database_for_plot["iteration"].append(iteration_t)
       self.database_for_plot[self.batch_episode_name].append(self.exploitability_list[iteration_t])
-
-
-
-  def wait_and_make_episode_loop(self, q_in, q_out_sl, q_out_rl):
-      """
-      合図が来たら、make_episodesを実行し、結果をqueueに渡す。
-
-      Parameters
-      ----------
-      q_in : queue
-          合図を送るqueue, 一つのqueueの中身は、[episode_num, module]
-      q_out : queue
-          得られたデータを送るqueue
-      """
-
-      while True:
-        episode_num , sl ,rl = q_in.get()
-
-        #プロセス終了
-        if episode_num < 0:
-            break
-
-        #仕事start
-        sl_memory, rl_memory = self.make_episodes(episode_num, sl, rl)
-
-        q_out_sl.put(sl_memory)
-        q_out_rl.put(rl_memory)
-
 
 
   def get_exploitability_and_optimal_gap(self):
@@ -227,6 +181,39 @@ class KuhnTrainer:
         self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
 
 
+  #並列化のagentで割って作る #very imortant part for parallelization
+  def make_episodes_paralleled(self,episode_num):
+
+    a = time.time()
+    #50episode 作成するのに about 1.2s かかっている
+    queue_SL, queue_RL = Queue(), Queue()
+    process1 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
+    process2 = Process(target=self.make_episodes, args=(episode_num//2, queue_SL, queue_RL))
+
+    b = time.time()
+
+
+    process1.start()
+    process2.start()
+
+    c = time.time()
+
+    process1.join()
+    process2.join()
+
+    d = time.time()
+
+    while not queue_RL.empty():
+      for data_RL in queue_RL.get():
+        self.M_RL.append(data_RL)
+
+    while not queue_SL.empty():
+      for data_SL in queue_SL.get():
+        self.M_SL.append(data_SL)
+
+
+    #print(len(self.M_RL), len(self.M_SL))
+
 
   def make_str_episode(self, iter, queue):
       str_list = ["a", "b", "c", "d", "e","f", "g", "h", "i", "j"]
@@ -245,31 +232,35 @@ class KuhnTrainer:
       """
 
 
-  def make_episodes(self, episode_num, sl, rl):
+  def make_episodes(self, num, queue_SL, queue_RL):
     list_SL = []
     list_RL = []
 
-    for ii in range(episode_num):
-
-      #data 収集part
-      #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
-      self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
-      for player_i in range(self.NUM_PLAYERS):
-        if np.random.uniform() < self.eta:
-          self.sigma_strategy_bit[player_i] = 0
-        else:
-          self.sigma_strategy_bit[player_i] = 1
-
-      cards = self.card_distribution(self.NUM_PLAYERS)
-      random.shuffle(cards)
-      history = "".join(cards[:self.NUM_PLAYERS])
-      self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
+    for ii in range(num):
+      #self.make_one_episode(queue_SL, queue_RL)
+      self.make_one_episode(list_SL, list_RL)
 
 
-      self.train_one_episode(history, list_SL, list_RL, sl, rl)
+    queue_RL.put(list_RL)
+    queue_SL.put(list_SL)
 
 
-    return list_SL, list_RL
+
+  def make_one_episode(self, queue_SL, queue_RL):
+    #data 収集part
+    #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
+    self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
+    for player_i in range(self.NUM_PLAYERS):
+      if np.random.uniform() < self.eta:
+        self.sigma_strategy_bit[player_i] = 0
+      else:
+        self.sigma_strategy_bit[player_i] = 1
+
+    cards = self.card_distribution(self.NUM_PLAYERS)
+    random.shuffle(cards)
+    history = "".join(cards[:self.NUM_PLAYERS])
+    self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
+    self.train_one_episode(history, queue_SL, queue_RL)
 
 
 
@@ -280,7 +271,7 @@ class KuhnTrainer:
 
 
 # _________________________________ Train second main method _________________________________
-  def train_one_episode(self, history, list_SL, list_RL, sl, rl):
+  def train_one_episode(self, history, queue_SL, queue_RL):
 
     # one episode
     while  not self.whether_terminal_states(history):
@@ -297,19 +288,19 @@ class KuhnTrainer:
         sars_list = self.make_sars_list(self.player_sars_list[player])
 
         #self.M_RL.append(sars_list)
-        #list_RL.put(sars_list)
-        list_RL.append(sars_list)
+        #queue_RL.put(sars_list)
+        queue_RL.append(sars_list)
 
         self.player_sars_list[player] = {"s":None, "a":None, "r":None, "s_prime":None}
 
 
       if self.sigma_strategy_bit[player] == 0:
         #sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.epsilon_greedy_q_learning_strategy[s]) : change
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=rl.action_step(torch.Tensor(self.make_state_bit(s))))
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.RL.action_step(torch.Tensor(self.make_state_bit(s))))
 
       elif self.sigma_strategy_bit[player] == 1:
         #sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.avg_strategy[s]) : change
-        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=sl.action_step(torch.Tensor(self.make_state_bit(s))))
+        sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.SL.action_step(torch.Tensor(self.make_state_bit(s))))
 
 
       a = ("p" if sampling_action == 0 else "b")
@@ -325,14 +316,13 @@ class KuhnTrainer:
         if self.sl_algo == "mlp":
           sa_bit = self.from_episode_to_bit([(s, a)])
           #self.reservior_add(self.M_SL,sa_bit)
-          #list_SL.put(sa_bit)
-          list_SL.append(sa_bit)
+          #queue_SL.put(sa_bit)
+          queue_SL.append(sa_bit)
 
         else:
           #self.reservior_add(self.M_SL,(s, a))
-          #list_SL.put((s, a))
-          list_SL.append(sa_bit)
-
+          #queue_SL.put((s, a))
+          queue_SL.append(sa_bit)
 
 
     if self.whether_terminal_states(history):
@@ -342,8 +332,8 @@ class KuhnTrainer:
 
         sars_list = self.make_sars_list(self.player_sars_list[target_player_i])
         #self.M_RL.append(sars_list)
-        #list_RL.put(sars_list)
-        list_RL.append(sars_list)
+        #queue_RL.put(sars_list)
+        queue_RL.append(sars_list)
 
         self.player_sars_list[target_player_i] = {"s":None, "a":None, "r":None, "s_prime":None}
 
