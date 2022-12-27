@@ -10,6 +10,7 @@ import random
 import itertools
 import copy
 import torch
+import wandb
 
 
 
@@ -78,7 +79,7 @@ class KuhnTrainer:
 
     #プロセス立ち上げ
     q_in, q_out_sl, q_out_rl, q_finish = Queue(), Queue(), Queue(), Queue()
-    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in, q_out_sl, q_out_rl, q_finish))
+    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in, q_out_sl, q_out_rl, q_finish, self.SL, self.RL))
     process1.start()
 
 
@@ -93,21 +94,15 @@ class KuhnTrainer:
       #エピソード作成
       start_time = time.time()
 
-      q_in.put([self.batch_episode_num, self.SL, self.RL])
+      q_in.put(self.batch_episode_num)
 
+      #エピソード作成し終わるまで待機
+      q_finish.get()
 
-      #エピソード作成し終わるまでループで待機しとく
+      end_time = time.time()
+      #print("out:", end_time-start_time)
+
       #queueに溜まってるデータがあれば、取り出す
-
-      while True:
-        time_1 = time.time()
-        finish_num = q_finish.get()
-        if finish_num == 1:
-          break
-
-      time_2 = time.time()
-
-
       while not q_out_sl.empty():
         for data_SL in q_out_sl.get():
           self.reservior_add(self.M_SL,data_SL)
@@ -115,8 +110,7 @@ class KuhnTrainer:
         for data_RL in q_out_rl.get():
           self.M_RL.append(data_RL)
 
-      tt = time_2 - time_1
-      #print("out:", tt)
+
 
       if self.save_matplotlib :
         end_time = time.time()
@@ -136,10 +130,11 @@ class KuhnTrainer:
       if iteration_t in exploitability_check_t :
         self.calculate_evalation_values(iteration_t)
 
+
     #process終了
     while not q_in.empty():
       q_in.get()
-    q_in.put([-1, None, None])
+    q_in.put(-1)
     process1.join()
 
 
@@ -150,9 +145,10 @@ class KuhnTrainer:
     elif self.whether_accurate_exploitability:
       self.optimal_gap, self.dfs_exploitability , self.current_br_exploitability = self.get_exploitability_and_optimal_gap()
       self.exploitability_list[iteration_t] = self.dfs_exploitability
-
       self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
+      if self.wandb_save:
+              wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t]})
     else:
       self.current_br_exploitability = self.get_current_br_exploitability()
       self.exploitability_list[iteration_t] = self.current_br_exploitability
@@ -166,7 +162,7 @@ class KuhnTrainer:
 
 
 
-  def wait_and_make_episode_loop(self, q_in, q_out_sl, q_out_rl, q_finish):
+  def wait_and_make_episode_loop(self, q_in, q_out_sl, q_out_rl, q_finish, sl, rl):
       """
       合図が来たら、make_episodesを実行し、結果をqueueに渡す。
 
@@ -178,27 +174,29 @@ class KuhnTrainer:
           得られたデータを送るqueue
       """
       while True:
-        episode_num , sl ,rl = q_in.get()
+        episode_num  = q_in.get()
+
         a = time.time()
 
         #プロセス終了の場合
         if episode_num < 0:
             break
 
-        #仕事start
+
+        #ここで重みが更新されているか確認する → 変化している
+        print(sl.sl_network.state_dict()['fc1.bias'][0])
+
         sl_memory, rl_memory = self.make_episodes(episode_num, sl, rl)
         q_out_sl.put(sl_memory)
         q_out_rl.put(rl_memory)
+
         #self.make_str_episode(episode_num)
 
-        b = time.time()
-
-        t = b-a
-        #print("in:", t)
-
         #エピソード作成終了の合図
+        q_finish.put("finish")
 
-        q_finish.put(1)
+        b = time.time()
+        #print("in:", b-a)
 
 
 
