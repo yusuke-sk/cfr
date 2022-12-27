@@ -77,8 +77,11 @@ class KuhnTrainer:
 
 
     #プロセス立ち上げ
-    q_in, q_out_sl, q_out_rl = Queue(), Queue(), Queue()
-    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in, q_out_sl, q_out_rl))
+    q_in, q_out_sl, q_out_rl, q_finish = Queue(), Queue(), Queue(), Queue()
+    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in, q_out_sl, q_out_rl, q_finish))
+    process1.start()
+
+
 
 
     #並列化の準備
@@ -92,20 +95,35 @@ class KuhnTrainer:
 
       q_in.put([self.batch_episode_num, self.SL, self.RL])
 
-      end_time = time.time()
-      if self.save_matplotlib :
-        make_episode_time = end_time - start_time
-        self.database_for_plot["iteration"].append(iteration_t)
-        self.database_for_plot[self.batch_episode_name].append(make_episode_time)
 
-
+      #エピソード作成し終わるまでループで待機しとく
       #queueに溜まってるデータがあれば、取り出す
+
+      while True:
+        time_1 = time.time()
+        finish_num = q_finish.get()
+        if finish_num == 1:
+          break
+
+      time_2 = time.time()
+
+
       while not q_out_sl.empty():
         for data_SL in q_out_sl.get():
           self.reservior_add(self.M_SL,data_SL)
       while not q_out_rl.empty():
         for data_RL in q_out_rl.get():
           self.M_RL.append(data_RL)
+
+      tt = time_2 - time_1
+      #print("out:", tt)
+
+      if self.save_matplotlib :
+        end_time = time.time()
+        make_episode_time = end_time - start_time
+        #print(make_episode_time, time_1-start_time, time_2-time_1, end_time-time_2)
+        self.database_for_plot["iteration"].append(iteration_t)
+        self.database_for_plot[self.batch_episode_name].append(make_episode_time)
 
 
       #学習
@@ -117,6 +135,12 @@ class KuhnTrainer:
 
       if iteration_t in exploitability_check_t :
         self.calculate_evalation_values(iteration_t)
+
+    #process終了
+    while not q_in.empty():
+      q_in.get()
+    q_in.put([-1, None, None])
+    process1.join()
 
 
   def calculate_evalation_values(self, iteration_t):
@@ -136,13 +160,13 @@ class KuhnTrainer:
 
 
     #追加 matplotlibで図を書くため
-    if self.save_matplotlib:
-      self.database_for_plot["iteration"].append(iteration_t)
-      self.database_for_plot[self.batch_episode_name].append(self.exploitability_list[iteration_t])
+    #if self.save_matplotlib:
+    #  self.database_for_plot["iteration"].append(iteration_t)
+    #  self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
 
-  def wait_and_make_episode_loop(self, q_in, q_out_sl, q_out_rl):
+  def wait_and_make_episode_loop(self, q_in, q_out_sl, q_out_rl, q_finish):
       """
       合図が来たら、make_episodesを実行し、結果をqueueに渡す。
 
@@ -153,19 +177,29 @@ class KuhnTrainer:
       q_out : queue
           得られたデータを送るqueue
       """
-
       while True:
         episode_num , sl ,rl = q_in.get()
+        a = time.time()
 
-        #プロセス終了
+        #プロセス終了の場合
         if episode_num < 0:
             break
 
         #仕事start
         sl_memory, rl_memory = self.make_episodes(episode_num, sl, rl)
-
         q_out_sl.put(sl_memory)
         q_out_rl.put(rl_memory)
+        #self.make_str_episode(episode_num)
+
+        b = time.time()
+
+        t = b-a
+        #print("in:", t)
+
+        #エピソード作成終了の合図
+
+        q_finish.put(1)
+
 
 
 
@@ -228,9 +262,8 @@ class KuhnTrainer:
 
 
 
-  def make_str_episode(self, iter, queue):
+  def make_str_episode(self, iter):
       str_list = ["a", "b", "c", "d", "e","f", "g", "h", "i", "j"]
-      """
       for ii in range(iter):
           result = ""
           not_j = True
@@ -240,9 +273,7 @@ class KuhnTrainer:
               result += st
               if st == "j":
                   not_j = False
-              time.sleep(0.01)
-          queue.put(result)
-      """
+              time.sleep(0.0001)
 
 
   def make_episodes(self, episode_num, sl, rl):
@@ -264,7 +295,6 @@ class KuhnTrainer:
       random.shuffle(cards)
       history = "".join(cards[:self.NUM_PLAYERS])
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
-
 
       self.train_one_episode(history, list_SL, list_RL, sl, rl)
 
