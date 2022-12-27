@@ -78,9 +78,15 @@ class KuhnTrainer:
 
 
     #プロセス立ち上げ
-    q_in, q_out_sl, q_out_rl, q_finish = Queue(), Queue(), Queue(), Queue()
-    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in, q_out_sl, q_out_rl, q_finish, self.SL, self.RL))
+    q_in1, q_out_sl1, q_out_rl1, q_finish1 = Queue(), Queue(), Queue(), Queue()
+    q_in2, q_out_sl2, q_out_rl2, q_finish2 = Queue(), Queue(), Queue(), Queue()
+
+    process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in1, q_out_sl1, q_out_rl1, q_finish1, self.SL, self.RL))
+
+    process2 = Process(target=self.wait_and_make_episode_loop, args=(q_in2, q_out_sl2, q_out_rl2, q_finish2, self.SL, self.RL))
+
     process1.start()
+    process2.start()
 
 
 
@@ -94,20 +100,30 @@ class KuhnTrainer:
       #エピソード作成
       start_time = time.time()
 
-      q_in.put(self.batch_episode_num)
+      q_in1.put(self.batch_episode_num//2)
+      q_in2.put(self.batch_episode_num//2)
+
 
       #エピソード作成し終わるまで待機
-      q_finish.get()
+      q_finish1.get()
+      q_finish2.get()
+
 
       end_time = time.time()
       #print("out:", end_time-start_time)
 
       #queueに溜まってるデータがあれば、取り出す
-      while not q_out_sl.empty():
-        for data_SL in q_out_sl.get():
+      while not q_out_sl1.empty():
+        for data_SL in q_out_sl1.get():
           self.reservior_add(self.M_SL,data_SL)
-      while not q_out_rl.empty():
-        for data_RL in q_out_rl.get():
+      while not q_out_rl1.empty():
+        for data_RL in q_out_rl1.get():
+          self.M_RL.append(data_RL)
+      while not q_out_sl2.empty():
+        for data_SL in q_out_sl2.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl2.empty():
+        for data_RL in q_out_rl2.get():
           self.M_RL.append(data_RL)
 
 
@@ -132,10 +148,11 @@ class KuhnTrainer:
 
 
     #process終了
-    while not q_in.empty():
-      q_in.get()
-    q_in.put(-1)
+    q_in1.put(-1)
+    q_in2.put(-1)
+
     process1.join()
+    process2.join()
 
 
   def calculate_evalation_values(self, iteration_t):
@@ -184,7 +201,7 @@ class KuhnTrainer:
 
 
         #ここで重みが更新されているか確認する → 変化している
-        print(sl.sl_network.state_dict()['fc1.bias'][0])
+        #print(sl.sl_network.state_dict()['fc1.bias'][0])
 
         sl_memory, rl_memory = self.make_episodes(episode_num, sl, rl)
         q_out_sl.put(sl_memory)
