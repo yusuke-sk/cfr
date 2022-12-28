@@ -27,14 +27,14 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 1*(10**6),
-    num_players = 4,
-    batch_episode_num = [40, 30, 20, 20][4-2],
-    wandb_save = [True, False][1],
-    parallelized = ["DataCollect","StrategyUpdate", False][0],
+    num_players = 5,
+    batch_episode_num = [40, 30, 20, 20][5-2],
+    wandb_save = [True, False][0],
+    parallelized = ["DataCollect","StrategyUpdate", False][2],
     collect_step_or_episode = ["step", "episode"][1],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
-    save_matplotlib = [True, False][0],
+    save_matplotlib = [True, False][1],
   )
 
 
@@ -108,9 +108,10 @@ if __name__ == '__main__':
 
   if config["wandb_save"]:
     #並列化の実験用
-    if config["parallelized"] ==  "DataCollect" or   config["parallelized"] ==  "StrategyUpdate":
+    if config["parallelized"] ==  "DataCollect" or   config["parallelized"] ==  "StrategyUpdate" or (config["parallelized"] == False and config["collect_step_or_episode"] == "episode"):
       wandb.init(project="Kuhn_Poker_trained_Parallel_{}players".format(config["num_players"])
       , name="{}_NFSP".format(config["parallelized"]))
+
 
     elif config["rl_algo"] == "sql":
       #wandb.init(project="Kuhn_Poker_{}players_SQL".format(config["num_players"]), name="{}_{}_A_{}_P_{}_NFSP".

@@ -135,6 +135,10 @@ class KuhnTrainer:
         self.database_for_plot["iteration"].append(iteration_t)
         self.database_for_plot[self.batch_episode_name].append(make_episode_time)
 
+      if self.wandb_save:
+        end_time = time.time()
+        make_episode_time = end_time - start_time
+        wandb.log({'iteration': iteration_t, 'batch_episode_time': make_episode_time})
 
       #学習
       self.SL_and_RL_learn(iteration_t)
