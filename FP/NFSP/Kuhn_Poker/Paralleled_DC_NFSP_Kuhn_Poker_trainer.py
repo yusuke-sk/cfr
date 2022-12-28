@@ -80,13 +80,20 @@ class KuhnTrainer:
     #プロセス立ち上げ
     q_in1, q_out_sl1, q_out_rl1, q_finish1 = Queue(), Queue(), Queue(), Queue()
     q_in2, q_out_sl2, q_out_rl2, q_finish2 = Queue(), Queue(), Queue(), Queue()
+    q_in3, q_out_sl3, q_out_rl3, q_finish3 = Queue(), Queue(), Queue(), Queue()
+    q_in4, q_out_sl4, q_out_rl4, q_finish4 = Queue(), Queue(), Queue(), Queue()
+
 
     process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in1, q_out_sl1, q_out_rl1, q_finish1, self.SL, self.RL))
-
     process2 = Process(target=self.wait_and_make_episode_loop, args=(q_in2, q_out_sl2, q_out_rl2, q_finish2, self.SL, self.RL))
+    process3 = Process(target=self.wait_and_make_episode_loop, args=(q_in3, q_out_sl3, q_out_rl3, q_finish3, self.SL, self.RL))
+    process4 = Process(target=self.wait_and_make_episode_loop, args=(q_in4, q_out_sl4, q_out_rl4, q_finish4, self.SL, self.RL))
+
 
     process1.start()
     process2.start()
+    process3.start()
+    process4.start()
 
 
 
@@ -100,13 +107,17 @@ class KuhnTrainer:
       #エピソード作成
       start_time = time.time()
 
-      q_in1.put(self.batch_episode_num//2)
-      q_in2.put(self.batch_episode_num//2)
+      q_in1.put(self.batch_episode_num//4)
+      q_in2.put(self.batch_episode_num//4)
+      q_in3.put(self.batch_episode_num//4)
+      q_in4.put(self.batch_episode_num//4)
 
 
       #エピソード作成し終わるまで待機
       q_finish1.get()
       q_finish2.get()
+      q_finish3.get()
+      q_finish4.get()
 
 
       end_time = time.time()
@@ -119,11 +130,26 @@ class KuhnTrainer:
       while not q_out_rl1.empty():
         for data_RL in q_out_rl1.get():
           self.M_RL.append(data_RL)
+
       while not q_out_sl2.empty():
         for data_SL in q_out_sl2.get():
           self.reservior_add(self.M_SL,data_SL)
       while not q_out_rl2.empty():
         for data_RL in q_out_rl2.get():
+          self.M_RL.append(data_RL)
+
+      while not q_out_sl3.empty():
+        for data_SL in q_out_sl3.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl3.empty():
+        for data_RL in q_out_rl3.get():
+          self.M_RL.append(data_RL)
+
+      while not q_out_sl4.empty():
+        for data_SL in q_out_sl4.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl4.empty():
+        for data_RL in q_out_rl4.get():
           self.M_RL.append(data_RL)
 
 
@@ -154,9 +180,14 @@ class KuhnTrainer:
     #process終了
     q_in1.put(-1)
     q_in2.put(-1)
+    q_in3.put(-1)
+    q_in4.put(-1)
 
     process1.join()
     process2.join()
+    process3.join()
+    process4.join()
+
 
 
   def calculate_evalation_values(self, iteration_t):

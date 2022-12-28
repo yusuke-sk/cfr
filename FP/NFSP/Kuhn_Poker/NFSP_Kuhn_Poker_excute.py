@@ -30,11 +30,11 @@ if __name__ == '__main__':
     num_players = 5,
     batch_episode_num = [40, 30, 20, 20][5-2],
     wandb_save = [True, False][0],
-    parallelized = ["DataCollect","StrategyUpdate", False][2],
+    parallelized = ["DataCollect","StrategyUpdate", False][0],
     collect_step_or_episode = ["step", "episode"][1],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
-    save_matplotlib = [True, False][1],
+    save_matplotlib = [True, False][0],
   )
 
 
@@ -276,7 +276,7 @@ if __name__ == '__main__':
 
     #並列化
     if config["parallelized"] in ["DataCollect","StrategyUpdate"] or config["collect_step_or_episode"] ==  "episode":
-      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["parallelized"]))
+      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}_4.csv'.format(config["num_players"], config["parallelized"]))
 
     else:
       #提案手法SQL
