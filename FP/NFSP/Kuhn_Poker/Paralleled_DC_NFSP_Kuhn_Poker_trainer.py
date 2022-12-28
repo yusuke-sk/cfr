@@ -82,19 +82,30 @@ class KuhnTrainer:
     q_in2, q_out_sl2, q_out_rl2, q_finish2 = Queue(), Queue(), Queue(), Queue()
     q_in3, q_out_sl3, q_out_rl3, q_finish3 = Queue(), Queue(), Queue(), Queue()
     q_in4, q_out_sl4, q_out_rl4, q_finish4 = Queue(), Queue(), Queue(), Queue()
+    #q_in5, q_out_sl5, q_out_rl5, q_finish5 = Queue(), Queue(), Queue(), Queue()
+    #q_in6, q_out_sl6, q_out_rl6, q_finish6 = Queue(), Queue(), Queue(), Queue()
+    #q_in7, q_out_sl7, q_out_rl7, q_finish7 = Queue(), Queue(), Queue(), Queue()
+    #q_in8, q_out_sl8, q_out_rl8, q_finish8 = Queue(), Queue(), Queue(), Queue()
 
 
     process1 = Process(target=self.wait_and_make_episode_loop, args=(q_in1, q_out_sl1, q_out_rl1, q_finish1, self.SL, self.RL))
     process2 = Process(target=self.wait_and_make_episode_loop, args=(q_in2, q_out_sl2, q_out_rl2, q_finish2, self.SL, self.RL))
     process3 = Process(target=self.wait_and_make_episode_loop, args=(q_in3, q_out_sl3, q_out_rl3, q_finish3, self.SL, self.RL))
     process4 = Process(target=self.wait_and_make_episode_loop, args=(q_in4, q_out_sl4, q_out_rl4, q_finish4, self.SL, self.RL))
+    #process5 = Process(target=self.wait_and_make_episode_loop, args=(q_in5, q_out_sl5, q_out_rl5, q_finish5, self.SL, self.RL))
+    #process6 = Process(target=self.wait_and_make_episode_loop, args=(q_in6, q_out_sl6, q_out_rl6, q_finish6, self.SL, self.RL))
+    #process7 = Process(target=self.wait_and_make_episode_loop, args=(q_in7, q_out_sl7, q_out_rl7, q_finish7, self.SL, self.RL))
+    #process8 = Process(target=self.wait_and_make_episode_loop, args=(q_in8, q_out_sl8, q_out_rl8, q_finish8, self.SL, self.RL))
 
 
     process1.start()
     process2.start()
     process3.start()
     process4.start()
-
+    #process5.start()
+    #process6.start()
+    #process7.start()
+    #process8.start()
 
 
 
@@ -111,6 +122,11 @@ class KuhnTrainer:
       q_in2.put(self.batch_episode_num//4)
       q_in3.put(self.batch_episode_num//4)
       q_in4.put(self.batch_episode_num//4)
+      #q_in5.put(self.batch_episode_num//8)
+      #q_in6.put(self.batch_episode_num//8)
+      #q_in7.put(self.batch_episode_num//8)
+      #q_in8.put(self.batch_episode_num//8)
+
 
 
       #エピソード作成し終わるまで待機
@@ -118,6 +134,10 @@ class KuhnTrainer:
       q_finish2.get()
       q_finish3.get()
       q_finish4.get()
+      #q_finish5.get()
+      #q_finish6.get()
+      #q_finish7.get()
+      #q_finish8.get()
 
 
       end_time = time.time()
@@ -152,6 +172,35 @@ class KuhnTrainer:
         for data_RL in q_out_rl4.get():
           self.M_RL.append(data_RL)
 
+      """
+      while not q_out_sl5.empty():
+        for data_SL in q_out_sl5.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl5.empty():
+        for data_RL in q_out_rl5.get():
+          self.M_RL.append(data_RL)
+
+      while not q_out_sl6.empty():
+        for data_SL in q_out_sl6.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl6.empty():
+        for data_RL in q_out_rl6.get():
+          self.M_RL.append(data_RL)
+
+      while not q_out_sl7.empty():
+        for data_SL in q_out_sl7.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl7.empty():
+        for data_RL in q_out_rl7.get():
+          self.M_RL.append(data_RL)
+
+      while not q_out_sl8.empty():
+        for data_SL in q_out_sl8.get():
+          self.reservior_add(self.M_SL,data_SL)
+      while not q_out_rl8.empty():
+        for data_RL in q_out_rl8.get():
+          self.M_RL.append(data_RL)
+      """
 
 
       if self.save_matplotlib :
@@ -182,11 +231,19 @@ class KuhnTrainer:
     q_in2.put(-1)
     q_in3.put(-1)
     q_in4.put(-1)
+    #q_in5.put(-1)
+    #q_in6.put(-1)
+    #q_in7.put(-1)
+    #q_in8.put(-1)
 
     process1.join()
     process2.join()
     process3.join()
     process4.join()
+    #process5.join()
+    #process6.join()
+    #process7.join()
+    #process8.join()
 
 
 
