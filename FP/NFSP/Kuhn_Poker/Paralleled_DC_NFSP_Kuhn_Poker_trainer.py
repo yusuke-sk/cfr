@@ -48,7 +48,9 @@ class KuhnTrainer:
 
     #追加 matplotlibで記録を集計するため
     self.batch_episode_name = "parallel_batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
-    self.database_for_plot = {"iteration":[] ,self.batch_episode_name:[]}
+    self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
+    self.database_for_plot = {"iteration":[] , self.ex_name:[]}
+    self.database_for_time = {"iteration":[] , self.batch_episode_name:[]}
 
 
 
@@ -207,8 +209,8 @@ class KuhnTrainer:
         end_time = time.time()
         make_episode_time = end_time - start_time
         #print(make_episode_time, time_1-start_time, time_2-time_1, end_time-time_2)
-        self.database_for_plot["iteration"].append(iteration_t)
-        self.database_for_plot[self.batch_episode_name].append(make_episode_time)
+        self.database_for_time["iteration"].append(iteration_t)
+        self.database_for_time[self.batch_episode_name].append(make_episode_time)
 
       if self.wandb_save:
         end_time = time.time()
@@ -265,9 +267,9 @@ class KuhnTrainer:
 
 
     #追加 matplotlibで図を書くため
-    #if self.save_matplotlib:
-    #  self.database_for_plot["iteration"].append(iteration_t)
-    #  self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+    if self.save_matplotlib:
+      self.database_for_plot["iteration"].append(iteration_t)
+      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
 

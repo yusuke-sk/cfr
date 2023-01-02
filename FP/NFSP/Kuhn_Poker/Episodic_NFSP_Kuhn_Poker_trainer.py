@@ -54,7 +54,9 @@ class KuhnTrainer:
 
     #追加 matplotlibで記録を集計するため
     self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
-    self.database_for_plot = {"iteration":[] ,self.batch_episode_name:[]}
+    self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
+    self.database_for_plot = {"iteration":[] , self.ex_name:[]}
+    self.database_for_time = {"iteration":[] , self.batch_episode_name:[]}
 
 
     self.M_SL = []
@@ -94,8 +96,8 @@ class KuhnTrainer:
       end_time = time.time()
       if self.save_matplotlib :
         make_episode_time = end_time - start_time
-        self.database_for_plot["iteration"].append(iteration_t)
-        self.database_for_plot[self.batch_episode_name].append(make_episode_time)
+        self.database_for_time["iteration"].append(iteration_t)
+        self.database_for_time[self.batch_episode_name].append(make_episode_time)
 
       if self.wandb_save:
         end_time = time.time()
@@ -136,8 +138,9 @@ class KuhnTrainer:
       self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
     #追加 matplotlibで図を書くため
-    #self.database_for_plot["iteration"].append(iteration_t)
-    #self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t]/self.random_strategy_exploitability)
+    self.database_for_plot["iteration"].append(iteration_t)
+    self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+
 
   def get_exploitability_and_optimal_gap(self):
       #最適反応戦略と平均戦略のテーブルを更新: change

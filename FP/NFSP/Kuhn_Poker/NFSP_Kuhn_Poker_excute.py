@@ -29,8 +29,8 @@ if __name__ == '__main__':
     iterations = 1*(10**6),
     num_players = 3,
     batch_episode_num = [40, 28, 20, 20][3-2],
-    wandb_save = [True, False][0],
-    parallelized = ["DataCollect","StrategyUpdate", False][2],
+    wandb_save = [True, False][1],
+    parallelized = ["DataCollect","StrategyUpdate", False][0],
     collect_step_or_episode = ["step", "episode"][1],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
@@ -68,7 +68,7 @@ if __name__ == '__main__':
     device = torch.device('cpu'),
 
     #sql
-    rl_alpha = 1e+1,
+    rl_alpha = 5e+1,
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
     alpha_discrease = [True, False][0],
     )
@@ -275,8 +275,18 @@ if __name__ == '__main__':
     df = df.set_index('iteration')
 
     #並列化
-    if config["parallelized"] in ["DataCollect","StrategyUpdate"] or config["collect_step_or_episode"] ==  "episode":
-      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}_4.csv'.format(config["num_players"], config["parallelized"]))
+    if config["parallelized"] in ["DataCollect","StrategyUpdate"] :
+      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["parallelized"]))
+
+      df_time = pd.DataFrame(kuhn_trainer.database_for_time)
+      df_time = df_time.set_index('iteration')
+      df_time.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["parallelized"]))
+
+    elif config["collect_step_or_episode"] ==  "episode":
+      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["collect_step_or_episode"]))
+      df_time = pd.DataFrame(kuhn_trainer.database_for_time)
+      df_time = df_time.set_index('iteration')
+      df_time.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["collect_step_or_episode"]))
 
     else:
       #提案手法SQL
