@@ -58,10 +58,11 @@ class LeducTrainer:
     self.memory_count_for_sl = 0
 
     #追加 matplotlibで記録を集計するため
-    self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
-    self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
-    self.database_for_plot = {"iteration":[] , self.ex_name:[]}
-    self.database_for_time = {"iteration":[] , self.batch_episode_name:[]}
+    if self.save_matplotlib:
+      self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+      self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
+      self.database_for_plot = {"iteration":[] , self.ex_name:[]}
+      self.database_for_time = {"iteration":[] , self.batch_episode_name:[]}
 
 
     self.M_SL = []
@@ -95,7 +96,7 @@ class LeducTrainer:
           self.N_count[node][key_i] = 1.0
 
 
-
+    self.calculate_evalation_values(0)
     for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
 
@@ -124,7 +125,7 @@ class LeducTrainer:
 
 
       #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
-      exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
+      exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)]
 
       if iteration_t in exploitability_check_t :
         self.calculate_evalation_values(iteration_t)
@@ -138,9 +139,11 @@ class LeducTrainer:
       if self.wandb_save:
               wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t]})
 
+
       #追加 matplotlibで図を書くため
-      self.database_for_plot["iteration"].append(iteration_t)
-      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+      if self.save_matplotlib:
+        self.database_for_plot["iteration"].append(iteration_t)
+        self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
 
 
   def get_exploitability_and_optimal_gap(self):
@@ -196,7 +199,7 @@ class LeducTrainer:
 
   def make_episodes(self,episode_num):
 
-    for _ in range(episode_num):
+    for i in range(episode_num):
       #data 収集part
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
       self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
@@ -206,9 +209,9 @@ class LeducTrainer:
         else:
           self.sigma_strategy_bit[player_i] = 1
 
-      cards = self.card_distribution(self.NUM_PLAYERS)
-      random.shuffle(cards)
-      history = "".join(cards[:self.NUM_PLAYERS])
+      self.cards = self.card_distribution()
+      random.shuffle(self.cards)
+      history = "".join(self.cards[:self.NUM_PLAYERS])
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
       self.train_one_episode(history)
 
@@ -216,10 +219,9 @@ class LeducTrainer:
 
 
 # _________________________________ Train second main method _________________________________
-  def train_one_episode(self, history, iteration_t):
+  def train_one_episode(self, history):
   # one episode
     while  not self.whether_terminal_states(history):
-
       if self.whether_chance_node(history):
         history += self.cards[self.NUM_PLAYERS]
 
@@ -245,6 +247,7 @@ class LeducTrainer:
 
         elif self.sigma_strategy_bit[player] == 1:
           sampling_action = np.random.choice(list(range(self.NUM_ACTIONS)), p=self.SL.action_step(s))
+
 
         a = self.ACTION_DICT[sampling_action]
         history  += a

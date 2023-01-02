@@ -85,6 +85,7 @@ class KuhnTrainer:
       self.N_count[node] = np.array([1.0 for _ in range(self.NUM_ACTIONS)], dtype=float)
 
 
+    self.calculate_evalation_values(0)
     for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
       #1 iteraion = 1episode を守る
@@ -114,7 +115,7 @@ class KuhnTrainer:
 
       #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
       exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num
-      for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
+      for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)]
 
 
       if iteration_t in exploitability_check_t :
@@ -220,8 +221,6 @@ class KuhnTrainer:
       history = "".join(cards[:self.NUM_PLAYERS])
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
       self.train_one_episode(history)
-
-
 
 
 

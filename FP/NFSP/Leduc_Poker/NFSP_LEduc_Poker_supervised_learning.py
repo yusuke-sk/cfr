@@ -93,7 +93,7 @@ class SupervisedLearning:
 
 
 
-  def SL_learn(self, memory, target_player, update_strategy, iteration_t):
+  def SL_learn(self, memory, update_strategy, iteration_t):
 
     #train
     self.sl_network.train()
@@ -121,7 +121,7 @@ class SupervisedLearning:
       total_loss.append(loss.item())
 
     if self.leduc_trainer.wandb_save and self.save_count % 100 == 0:
-      wandb.log({'iteration': iteration_t, 'loss_sl_{}'.format(target_player):  np.mean(total_loss)})
+      wandb.log({'iteration': iteration_t, 'loss_sl':  np.mean(total_loss)})
     self.save_count += 1
 
 
@@ -172,7 +172,7 @@ class SupervisedLearning:
 
 
 
-  def SL_train_AVG(self, memory, target_player, strategy, n_count):
+  def SL_train_AVG(self, memory, strategy, n_count):
     for one_s_a_set in memory:
       for X, y in [one_s_a_set]:
         action_prob_list = np.array([0 for _ in range(self.NUM_ACTIONS)], dtype=float)

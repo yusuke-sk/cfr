@@ -78,7 +78,7 @@ class ReinforcementLearning:
     self.epsilon = 0
 
 
-  def RL_learn(self, memory, target_player, update_strategy, k):
+  def RL_learn(self, memory, update_strategy, k):
 
     self.deep_q_network.train()
     self.deep_q_network_target.eval()
@@ -184,7 +184,7 @@ class ReinforcementLearning:
 
 
     if self.leduc_trainer.wandb_save and self.save_count % 100 == 0:
-      wandb.log({'iteration': k, 'loss_rl_{}'.format(target_player):  np.mean(total_loss)})
+      wandb.log({'iteration': k, 'loss_rl':  np.mean(total_loss)})
     self.save_count += 1
 
 

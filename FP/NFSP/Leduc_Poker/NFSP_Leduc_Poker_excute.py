@@ -23,6 +23,7 @@ import NFSP_Leduc_Poker_generate_data
 import Episodic_NFSP_Leduc_Poker_trainer
 import Parallel_DC_NFSP_Leduc_Poker_trainer
 
+
 if __name__ == '__main__':
   # _________________________________ config _________________________________
   start_time =time.time()
@@ -32,10 +33,10 @@ if __name__ == '__main__':
     iterations = 10**3,
     num_players = 2,
     batch_episode_num = [28][2-2],
-    parallelized = ["DataCollect", False][1],
+    parallelized = ["DataCollect", False][0],
     collect_step_or_episode = ["step", "episode"][1],
     wandb_save = [True, False][1],
-    save_matplotlib = [True, False][1],
+    save_matplotlib = [True, False][0],
 
     #train
     eta = 0.1,
@@ -206,7 +207,16 @@ if __name__ == '__main__':
     if config["save_matplotlib"]:
       df = pd.DataFrame(leduc_trainer.database_for_plot)
       df = df.set_index('iteration')
-      if config["rl_algo"] == "sql":
+
+
+      if config["collect_step_or_episode"] ==  "episode":
+        df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["collect_step_or_episode"]))
+        df_time = pd.DataFrame(leduc_trainer.database_for_time)
+        df_time = df_time.set_index('iteration')
+        df_time.to_csv('../../../Other/Make_png/output/Leduc_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["collect_step_or_episode"]))
+
+
+      elif config["rl_algo"] == "sql":
         df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"]))
       else:
         df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}.csv'.format(config["num_players"],config["random_seed"], config["rl_algo"]))

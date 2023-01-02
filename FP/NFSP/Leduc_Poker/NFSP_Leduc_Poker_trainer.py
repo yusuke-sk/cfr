@@ -59,7 +59,7 @@ class LeducTrainer:
 
 
     #追加 matplotlibで図を書くため
-    if self.save_matploitlib:
+    if self.save_matplotlib:
       self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
       self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
 
@@ -150,7 +150,7 @@ class LeducTrainer:
           wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
 
         #追加 matplotlibで図を書くため
-        if self.save_matploitlib:
+        if self.save_matplotlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
       end_calc_exploitability = time.time()
@@ -211,15 +211,15 @@ class LeducTrainer:
 
           # SL update
           if self.sl_algo == "mlp":
-            self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
+            self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
           elif self.sl_algo == "cnt":
-            self.SL.SL_train_AVG(self.M_SL, player, self.avg_strategy, self.N_count)
+            self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
             self.M_SL = []
 
           # RL update
           if self.rl_algo in ["dqn", "ddqn", "sql"] :
             self.RL.rl_algo = self.rl_algo
-            self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
+            self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
 
 
           elif self.rl_algo == "dfs":

@@ -112,6 +112,7 @@ class KuhnTrainer:
 
 
     #並列化の準備
+    self.calculate_evalation_values(0)
     for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
       #1 iteraion = 1episode を守る
@@ -222,7 +223,9 @@ class KuhnTrainer:
 
 
       #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
-      exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
+      exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num
+      for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)]
+
 
       if iteration_t in exploitability_check_t :
         self.calculate_evalation_values(iteration_t)
