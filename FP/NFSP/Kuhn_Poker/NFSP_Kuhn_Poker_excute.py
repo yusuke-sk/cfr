@@ -12,8 +12,8 @@ import torch.nn.functional as F
 from tqdm import tqdm
 import NFSP_Kuhn_Poker_trainer
 import Episodic_NFSP_Kuhn_Poker_trainer
-import Paralleled_DC_NFSP_Kuhn_Poker_trainer
-import Paralleled_SU_NFSP_Kuhn_Poker_trainer
+import Parallel_DC_NFSP_Kuhn_Poker_trainer
+import Parallel_SU_NFSP_Kuhn_Poker_trainer
 import NFSP_Kuhn_Poker_supervised_learning
 import NFSP_Kuhn_Poker_reinforcement_learning
 import NFSP_Kuhn_Poker_generate_data
@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
   # _________________________________ train _________________________________
   if config["parallelized"] == "DataCollect":
-    kuhn_trainer = Paralleled_DC_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
+    kuhn_trainer = Parallel_DC_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
       random_seed = config["random_seed"],
       train_iterations = config["iterations"],
       num_players= config["num_players"],
@@ -147,7 +147,7 @@ if __name__ == '__main__':
       )
 
   elif config["parallelized"] == "StrategyUpdate":
-    kuhn_trainer = Paralleled_SU_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
+    kuhn_trainer = Parallel_SU_NFSP_Kuhn_Poker_trainer.KuhnTrainer(
       random_seed = config["random_seed"],
       train_iterations = config["iterations"],
       num_players= config["num_players"],
