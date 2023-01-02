@@ -123,9 +123,11 @@ class SupervisedLearning:
     self.save_count += 1
 
 
-  def action_step(self, state_bit):
+  def action_step(self, node_X):
+    self.sl_network.eval()
     with torch.no_grad():
-      outputs = torch.sigmoid(self.sl_network.forward(state_bit)).detach().numpy()
+      inputs_eval = torch.tensor(self.kuhn_trainer.make_state_bit(node_X)).float().reshape(-1,self.STATE_BIT_LEN)
+      outputs = torch.sigmoid(self.sl_network.forward(inputs_eval)).detach().numpy()[0]
 
       return np.array([1.0-outputs[0], outputs[0]])
 

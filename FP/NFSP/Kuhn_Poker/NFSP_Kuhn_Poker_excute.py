@@ -27,14 +27,14 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [42, 1000, 10000][0],
     iterations = 1*(10**6),
-    num_players = 3,
-    batch_episode_num = [40, 28, 20, 20][3-2],
+    num_players = 2,
+    batch_episode_num = [40, 28, 20, 20][2-2],
     wandb_save = [True, False][1],
     parallelized = ["DataCollect","StrategyUpdate", False][0],
     collect_step_or_episode = ["step", "episode"][1],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
     rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
-    save_matplotlib = [True, False][0],
+    save_matplotlib = [True, False][1],
   )
 
 
@@ -182,25 +182,24 @@ if __name__ == '__main__':
       )
 
 
-  if config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"]:
-    kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning.ReinforcementLearning(
-      random_seed = config["random_seed"],
-      train_iterations = config["iterations"],
-      num_players= config["num_players"],
-      hidden_units_num = config["rl_hidden_units_num"],
-      lr = config["rl_lr"],
-      epochs = config["rl_epochs"],
-      sampling_num = config["rl_sampling_num"],
-      gamma = config["rl_gamma"],
-      tau = config["rl_tau"],
-      update_frequency = config["rl_update_frequency"],
-      loss_function = config["rl_loss_function"],
-      kuhn_trainer_for_rl = kuhn_trainer,
-      device = config["device"],
-      alpha = config["rl_alpha"],
-      rl_strategy = config["rl_strategy"],
-      alpha_discrease = config["alpha_discrease"]
-      )
+  kuhn_RL = NFSP_Kuhn_Poker_reinforcement_learning.ReinforcementLearning(
+    random_seed = config["random_seed"],
+    train_iterations = config["iterations"],
+    num_players= config["num_players"],
+    hidden_units_num = config["rl_hidden_units_num"],
+    lr = config["rl_lr"],
+    epochs = config["rl_epochs"],
+    sampling_num = config["rl_sampling_num"],
+    gamma = config["rl_gamma"],
+    tau = config["rl_tau"],
+    update_frequency = config["rl_update_frequency"],
+    loss_function = config["rl_loss_function"],
+    kuhn_trainer_for_rl = kuhn_trainer,
+    device = config["device"],
+    alpha = config["rl_alpha"],
+    rl_strategy = config["rl_strategy"],
+    alpha_discrease = config["alpha_discrease"]
+    )
 
 
 

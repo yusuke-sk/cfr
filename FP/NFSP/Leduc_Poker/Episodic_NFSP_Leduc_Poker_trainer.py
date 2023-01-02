@@ -21,7 +21,7 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class LeducTrainer:
-  def __init__(self, random_seed=42, train_iterations=10, num_players=2, wandb_save=False, save_matplotlib=False):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=28, save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 3
@@ -39,7 +39,9 @@ class LeducTrainer:
     self.card_set = set(self.card_distribution())
 
     self.random_seed_fix(self.random_seed)
-    self.save_matploitlib = save_matplotlib
+    self.step_per_learning_update = step_per_learning_update
+    self.batch_episode_num = batch_episode_num
+    self.save_matplotlib = save_matplotlib
 
     #可搾取量の合計計算時間
     self.exploitability_time = 0
@@ -55,11 +57,11 @@ class LeducTrainer:
     self.memory_size_rl = memory_size_rl
     self.memory_count_for_sl = 0
 
-
-    #追加 matplotlibで図を書くため
-    if self.save_matploitlib:
-      self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
-      self.database_for_plot = {"iteration":[] ,self.ex_name:[]}
+    #追加 matplotlibで記録を集計するため
+    self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+    self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
+    self.database_for_plot = {"iteration":[] , self.ex_name:[]}
+    self.database_for_time = {"iteration":[] , self.batch_episode_name:[]}
 
 
     self.M_SL = []
@@ -74,8 +76,6 @@ class LeducTrainer:
       self.create_infoSets("", target_player, 1.0)
 
     self.epsilon_greedy_q_learning_strategy = copy.deepcopy(self.avg_strategy)
-
-    self.game_step_count = 0
 
 
     self.RL = rl_module
@@ -95,11 +95,109 @@ class LeducTrainer:
           self.N_count[node][key_i] = 1.0
 
 
-    self.visit_count = 0
 
-    for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
+    for iteration_t in tqdm(range(1, int(self.train_iterations//self.batch_episode_num)+1)):
 
 
+      #1 iteraion = 1episode を守る
+      iteration_t *= self.batch_episode_num
+
+      #エピソード作成
+      start_time = time.time()
+      self.make_episodes(self.batch_episode_num)
+      end_time = time.time()
+      if self.save_matplotlib :
+        make_episode_time = end_time - start_time
+        self.database_for_time["iteration"].append(iteration_t)
+        self.database_for_time[self.batch_episode_name].append(make_episode_time)
+
+      if self.wandb_save:
+        end_time = time.time()
+        make_episode_time = end_time - start_time
+        wandb.log({'iteration': iteration_t,'batch_episode_time': make_episode_time})
+
+
+      #学習
+      start_time = time.time()
+      self.SL_and_RL_learn(iteration_t)
+      end_time = time.time()
+
+
+      #batch_sizeに比例した値でないとif文クリアせず、従来とあわなくなるので調整
+      exploitability_check_t = [int(j)//self.batch_episode_num * self.batch_episode_num for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*4 , endpoint=False)]
+
+      if iteration_t in exploitability_check_t :
+        self.calculate_evalation_values(iteration_t)
+
+
+  def calculate_evalation_values(self, iteration_t):
+      self.optimal_gap, self.dfs_exploitability , self.current_br_exploitability = self.get_exploitability_and_optimal_gap()
+      self.exploitability_list[iteration_t] = self.dfs_exploitability
+      self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
+
+      if self.wandb_save:
+              wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t]})
+
+      #追加 matplotlibで図を書くため
+      self.database_for_plot["iteration"].append(iteration_t)
+      self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+
+
+  def get_exploitability_and_optimal_gap(self):
+      #最適反応戦略と平均戦略のテーブルを更新: change
+      self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
+      self.SL.update_strategy_for_table(self.avg_strategy)
+
+
+      optimality_gap = 0
+      self.infoSets_dict = {}
+      for target_player in range(self.NUM_PLAYERS):
+        self.create_infoSets("", target_player, 1.0)
+      self.best_response_strategy_dfs = {}
+      for best_response_player_i in range(self.NUM_PLAYERS):
+        self.calc_best_response_value(self.best_response_strategy_dfs, best_response_player_i, "", 1)
+
+      dfs_exploitability = 0
+      current_br_exploitability = 0
+      for player_i in range(self.NUM_PLAYERS):
+          dfs_exploitability +=  self.GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy_dfs, self.avg_strategy, player_i)
+          current_br_exploitability += self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i)
+
+      optimality_gap = 1/self.NUM_PLAYERS * (dfs_exploitability - current_br_exploitability)
+      assert optimality_gap >= 0
+      return optimality_gap , dfs_exploitability, current_br_exploitability
+
+
+
+
+  def SL_and_RL_learn(self, iteration_t):
+    start_time = time.time()
+    if self.sl_algo == "mlp":
+      self.SL.SL_learn(self.M_SL, self.avg_strategy, iteration_t)
+    elif self.sl_algo == "cnt":
+      self.SL.SL_train_AVG(self.M_SL, self.avg_strategy, self.N_count)
+      self.M_SL = []
+
+    #強化学習
+    if self.rl_algo != "dfs":
+      self.RL.rl_algo = self.rl_algo
+      self.RL.RL_learn(self.M_RL, self.epsilon_greedy_q_learning_strategy, iteration_t)
+
+    elif self.rl_algo == "dfs":
+      self.infoSets_dict = {}
+      for target_player in range(self.NUM_PLAYERS):
+        self.create_infoSets("", target_player, 1.0)
+      self.epsilon_greedy_q_learning_strategy = {}
+      for best_response_player_i in range(self.NUM_PLAYERS):
+        self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
+    end_time = time.time()
+
+
+
+  def make_episodes(self,episode_num):
+
+    for _ in range(episode_num):
+      #data 収集part
       #0 → epsilon_greedy_q_strategy, 1 → avg_strategy
       self.sigma_strategy_bit = [-1 for _ in range(self.NUM_PLAYERS)]
       for player_i in range(self.NUM_PLAYERS):
@@ -108,58 +206,18 @@ class LeducTrainer:
         else:
           self.sigma_strategy_bit[player_i] = 1
 
-
-
-      self.cards = self.card_distribution()
-      random.shuffle(self.cards)
-      history = "".join(self.cards[:self.NUM_PLAYERS])
-
+      cards = self.card_distribution(self.NUM_PLAYERS)
+      random.shuffle(cards)
+      history = "".join(cards[:self.NUM_PLAYERS])
       self.player_sars_list = [{"s":None, "a":None, "r":None, "s_prime":None} for _ in range(self.NUM_PLAYERS)]
+      self.train_one_episode(history)
 
 
-      self.train_one_episode(history, iteration_t)
-
-
-
-      start_calc_exploitability = time.time()
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
-        #最適反応戦略と平均戦略のテーブルを更新: change
-        self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
-        self.SL.update_strategy_for_table(self.avg_strategy)
-
-        self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
-        self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
-
-
-        self.optimality_gap = 0
-        self.infoSets_dict = {}
-        for target_player in range(self.NUM_PLAYERS):
-          self.create_infoSets("", target_player, 1.0)
-        self.best_response_strategy_dfs = {}
-        for best_response_player_i in range(self.NUM_PLAYERS):
-          self.calc_best_response_value(self.best_response_strategy_dfs, best_response_player_i, "", 1)
-
-        for player_i in range(self.NUM_PLAYERS):
-          self.optimality_gap_i = 1/2 * (self.GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy_dfs, self.avg_strategy, player_i)
-           - self.GD.calculate_optimal_gap_best_response_strategy(self.epsilon_greedy_q_learning_strategy, self.avg_strategy, player_i))
-
-          self.optimality_gap += self.optimality_gap_i
-
-
-        if self.wandb_save:
-          wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
-
-        #追加 matplotlibで図を書くため
-        if self.save_matploitlib:
-          self.database_for_plot["iteration"].append(iteration_t)
-          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
-      end_calc_exploitability = time.time()
-      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
 
 # _________________________________ Train second main method _________________________________
   def train_one_episode(self, history, iteration_t):
- # one episode
+  # one episode
     while  not self.whether_terminal_states(history):
 
       if self.whether_chance_node(history):
@@ -204,37 +262,6 @@ class LeducTrainer:
           else:
             self.reservior_add(self.M_SL,(s, a))
 
-
-        self.game_step_count += 1
-
-        if self.game_step_count % self.RL.sampling_num == 0:
-
-          # SL update
-          if self.sl_algo == "mlp":
-            self.SL.SL_learn(self.M_SL, player, self.avg_strategy, iteration_t)
-          elif self.sl_algo == "cnt":
-            self.SL.SL_train_AVG(self.M_SL, player, self.avg_strategy, self.N_count)
-            self.M_SL = []
-
-          # RL update
-          if self.rl_algo in ["dqn", "ddqn", "sql"] :
-            self.RL.rl_algo = self.rl_algo
-            self.RL.RL_learn(self.M_RL, player, self.epsilon_greedy_q_learning_strategy, iteration_t)
-
-
-          elif self.rl_algo == "dfs":
-            self.infoSets_dict_player = [[] for _ in range(self.NUM_PLAYERS)]
-            self.infoSets_dict = {}
-            self.infoset_action_player_dict = {}
-
-            for target_player in range(self.NUM_PLAYERS):
-              self.create_infoSets("", target_player, 1.0)
-            self.epsilon_greedy_q_learning_strategy = {}
-            for best_response_player_i in range(self.NUM_PLAYERS):
-                self.calc_best_response_value(self.epsilon_greedy_q_learning_strategy, best_response_player_i, "", 1)
-
-
-
     # terminal state
     if self.whether_terminal_states(history):
       for target_player_i in range(self.NUM_PLAYERS):
@@ -245,7 +272,6 @@ class LeducTrainer:
         self.M_RL.append(sars_list)
 
         self.player_sars_list[target_player_i] = {"s":None, "a":None, "r":None, "s_prime":None}
-
 
 
 

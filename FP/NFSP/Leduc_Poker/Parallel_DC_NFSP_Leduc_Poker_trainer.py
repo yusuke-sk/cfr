@@ -21,7 +21,7 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class LeducTrainer:
-  def __init__(self, random_seed=42, train_iterations=10, num_players=2, wandb_save=False, save_matplotlib=False):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=28, save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 3
@@ -39,7 +39,10 @@ class LeducTrainer:
     self.card_set = set(self.card_distribution())
 
     self.random_seed_fix(self.random_seed)
-    self.save_matploitlib = save_matplotlib
+    self.step_per_learning_update = step_per_learning_update
+    self.batch_episode_num = batch_episode_num
+    self.save_matplotlib = save_matplotlib
+
 
     #可搾取量の合計計算時間
     self.exploitability_time = 0
@@ -95,8 +98,6 @@ class LeducTrainer:
           self.N_count[node][key_i] = 1.0
 
 
-    self.visit_count = 0
-
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
 
 
@@ -120,8 +121,6 @@ class LeducTrainer:
       self.train_one_episode(history, iteration_t)
 
 
-
-      start_calc_exploitability = time.time()
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         #最適反応戦略と平均戦略のテーブルを更新: change
         self.RL.update_strategy_for_table(self.epsilon_greedy_q_learning_strategy)
@@ -153,8 +152,7 @@ class LeducTrainer:
         if self.save_matploitlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
-      end_calc_exploitability = time.time()
-      self.exploitability_time += end_calc_exploitability - start_calc_exploitability
+
 
 
 # _________________________________ Train second main method _________________________________

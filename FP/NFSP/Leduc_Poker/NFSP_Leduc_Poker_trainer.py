@@ -21,7 +21,7 @@ import torch.nn as nn
 
 # _________________________________ Train class _________________________________
 class LeducTrainer:
-  def __init__(self, random_seed=42, train_iterations=10, num_players=2, wandb_save=False, save_matplotlib=False):
+  def __init__(self,random_seed=42, train_iterations=10, num_players=2, wandb_save=False, step_per_learning_update=128,batch_episode_num=28, save_matplotlib = False):
     self.train_iterations = train_iterations
     self.NUM_PLAYERS = num_players
     self.NUM_ACTIONS = 3
@@ -39,7 +39,9 @@ class LeducTrainer:
     self.card_set = set(self.card_distribution())
 
     self.random_seed_fix(self.random_seed)
-    self.save_matploitlib = save_matplotlib
+    self.step_per_learning_update = step_per_learning_update
+    self.batch_episode_num = batch_episode_num
+    self.save_matplotlib = save_matplotlib
 
     #可搾取量の合計計算時間
     self.exploitability_time = 0
@@ -94,8 +96,6 @@ class LeducTrainer:
         if valye_i != 0:
           self.N_count[node][key_i] = 1.0
 
-
-    self.visit_count = 0
 
     for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
 
