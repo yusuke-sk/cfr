@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
   config = dict(
     random_seed = [42, 1000, 10000][0],
-    iterations = 10**3,
+    iterations = 10**6,
     num_players = 2,
     batch_episode_num = [28][2-2],
     parallelized = ["DataCollect", False][0],
@@ -208,8 +208,15 @@ if __name__ == '__main__':
       df = pd.DataFrame(leduc_trainer.database_for_plot)
       df = df.set_index('iteration')
 
+      if config["parallelized"] in ["DataCollect"] :
+        df.to_csv('../../../Other/Make_png/output/leduc_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["parallelized"]))
 
-      if config["collect_step_or_episode"] ==  "episode":
+        df_time = pd.DataFrame(leduc_trainer.database_for_time)
+        df_time = df_time.set_index('iteration')
+        df_time.to_csv('../../../Other/Make_png/output/Leduc_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["parallelized"]))
+
+
+      elif config["collect_step_or_episode"] ==  "episode":
         df.to_csv('../../../Other/Make_png/output/Leduc_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["collect_step_or_episode"]))
         df_time = pd.DataFrame(leduc_trainer.database_for_time)
         df_time = df_time.set_index('iteration')

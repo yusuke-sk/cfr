@@ -57,7 +57,7 @@ class LeducTrainer:
 
     #追加 matplotlibで記録を集計するため
     if self.save_matplotlib:
-      self.batch_episode_name = "batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
+      self.batch_episode_name = "parallel_batch_episode_time_for_{}_{}".format(self.NUM_PLAYERS, self.random_seed)
       self.ex_name = "exploitability_for_{}_{}".format(self.random_seed, self.rl_algo)
       self.database_for_plot = {"iteration":[] , self.ex_name:[]}
       self.database_for_time = {"iteration":[] , self.batch_episode_name:[]}
@@ -321,7 +321,7 @@ class LeducTrainer:
 
 
 # _________________________________ Train second main method _________________________________
-  def train_one_episode(self, history):
+  def train_one_episode(self, history, list_SL, list_RL, sl, rl):
   # one episode
     while  not self.whether_terminal_states(history):
       if self.whether_chance_node(history):
@@ -339,7 +339,7 @@ class LeducTrainer:
           self.player_sars_list[player]["s_prime"] = s
 
           sars_list = self.make_sars_list(self.player_sars_list[player])
-          self.M_RL.append(sars_list)
+          list_RL.append(sars_list)
 
           self.player_sars_list[player] = {"s":None, "a":None, "r":None, "s_prime":None}
 
@@ -363,9 +363,9 @@ class LeducTrainer:
         if self.sigma_strategy_bit[player] == 0:
           if self.sl_algo == "mlp":
             sa_bit = self.from_episode_to_bit([(s, a)])
-            self.reservior_add(self.M_SL,sa_bit)
+            list_SL.append(sa_bit)
           else:
-            self.reservior_add(self.M_SL,(s, a))
+            list_SL.append(sa_bit)
 
     # terminal state
     if self.whether_terminal_states(history):
@@ -374,7 +374,7 @@ class LeducTrainer:
         self.player_sars_list[target_player_i]["r"] = r
 
         sars_list = self.make_sars_list(self.player_sars_list[target_player_i])
-        self.M_RL.append(sars_list)
+        list_RL.append(sars_list)
 
         self.player_sars_list[target_player_i] = {"s":None, "a":None, "r":None, "s_prime":None}
 
