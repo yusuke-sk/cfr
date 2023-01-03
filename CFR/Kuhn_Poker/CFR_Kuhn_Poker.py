@@ -565,8 +565,8 @@ start_time = time.time()
 config = dict(
   algo = ["vanilla_CFR", "chance_sampling_CFR", "external_sampling_MCCFR", "outcome_sampling_MCCFR"][1],
   train_iterations = 10**6,
-  num_players =  4,
-  random_seed = [42, 100, 1000][0],
+  num_players =  5,
+  random_seed = [1, 10, 100, 42][2],
   wandb_save = False,
   save_matplotlib = [True, False][0],
 )

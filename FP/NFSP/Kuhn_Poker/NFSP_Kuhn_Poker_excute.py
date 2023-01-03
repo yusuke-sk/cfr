@@ -25,21 +25,28 @@ if __name__ == '__main__':
   start_time = time.time()
 
   config = dict(
-    random_seed = [42, 1000, 10000][0],
+    random_seed = [1, 10, 100, 42][2],
     iterations = 1*(10**6),
     num_players = 5,
     batch_episode_num = [40, 28, 20, 20][5-2],
-    wandb_save = [True, False][1],
-    parallelized = ["DataCollect","StrategyUpdate", False][2],
+    parallelized = ["DataCollect","StrategyUpdate", False][0],
     collect_step_or_episode = ["step", "episode"][1],
-    whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
-    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
+    rl_algo = ["dqn", "sql", "dfs","ddqn"][1],
     save_matplotlib = [True, False][0],
+    wandb_save = [True, False][1],
+    whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
   )
 
 
   if  config["rl_algo"] in ["dqn" , "dfs" , "ddqn", "sql"] :
     config_plus = dict(
+
+    #sql
+    rl_alpha = [0.1, 1.0, 10.0, 50.0][3],
+    rl_strategy = ["ε-greedy", "proportional_Q"][0],
+    alpha_discrease = [True, False][0],
+
+
     eta = 0.1,
     memory_size_rl = 2*(10**4),
     memory_size_sl = 2*(10**5),
@@ -66,11 +73,6 @@ if __name__ == '__main__':
     # device
     #device = torch.device('mps') if torch.backends.mps.is_available() else torch.device('cpu')
     device = torch.device('cpu'),
-
-    #sql
-    rl_alpha = 5e+1,
-    rl_strategy = ["ε-greedy", "proportional_Q"][0],
-    alpha_discrease = [True, False][0],
     )
 
     config.update(config_plus)
@@ -275,17 +277,17 @@ if __name__ == '__main__':
 
     #並列化
     if config["parallelized"] in ["DataCollect","StrategyUpdate"] :
-      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["parallelized"]))
+      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["parallelized"]))
 
       df_time = pd.DataFrame(kuhn_trainer.database_for_time)
       df_time = df_time.set_index('iteration')
-      df_time.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["parallelized"]))
+      df_time.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_{}_NFSP_{}_{}.csv'.format(config["random_seed"], config["num_players"], config["parallelized"]))
 
     elif config["collect_step_or_episode"] ==  "episode":
-      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["collect_step_or_episode"]))
+      df.to_csv('../../../Other/Make_png/output/Kuhn_Poker/{}players/DB_for_{}_NFSP_{}_{}_{}_{}.csv'.format(config["num_players"], config["random_seed"], config["rl_algo"], config["rl_alpha"], config["alpha_discrease"], config["collect_step_or_episode"]))
       df_time = pd.DataFrame(kuhn_trainer.database_for_time)
       df_time = df_time.set_index('iteration')
-      df_time.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_NFSP_{}_{}.csv'.format(config["num_players"], config["collect_step_or_episode"]))
+      df_time.to_csv('../../../Other/Make_png/output/Kuhn_Poker/Parallel/DB_for_{}_NFSP_{}_{}.csv'.format(config["random_seed"], config["num_players"], config["collect_step_or_episode"]))
 
     else:
       #提案手法SQL
