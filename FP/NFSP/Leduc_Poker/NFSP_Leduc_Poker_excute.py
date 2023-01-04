@@ -29,7 +29,7 @@ if __name__ == '__main__':
   start_time =time.time()
 
   config = dict(
-    random_seed = [1, 10, 100, 42][0],
+    random_seed = [1, 10, 100, 42][2],
     iterations = 10**6,
     num_players = 2,
     batch_episode_num = [28][2-2],
@@ -37,9 +37,10 @@ if __name__ == '__main__':
     collect_step_or_episode = ["step", "episode"][1],
     wandb_save = [True, False][1],
     save_matplotlib = [True, False][0],
+    rl_algo = ["dqn", "sql", "ddqn", "dfs"][1],
 
     #sql
-    rl_alpha = 5e+1,
+    rl_alpha = [0.1 , 1.0, 10.0, 50.0][3],
     rl_strategy = ["ε-greedy", "proportional_Q"][0],
     alpha_discrease = [True, False][0],
 
@@ -64,7 +65,6 @@ if __name__ == '__main__':
     rl_tau = 0.1,
     rl_update_frequency = 300,
     sl_algo = ["cnt", "mlp"][1],
-    rl_algo = ["dfs", "dqn", "ddqn", "sql"][3],
 
   )
 
