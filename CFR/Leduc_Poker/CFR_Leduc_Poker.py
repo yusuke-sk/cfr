@@ -850,7 +850,7 @@ config = dict(
   algo = ["vanilla_CFR", "chance_sampling_CFR", "external_sampling_MCCFR", "outcome_sampling_MCCFR"][1] ,
   train_iterations = 10**6,
   num_players =  2,
-  random_seed = [1, 10, 100, 42][0],
+  random_seed = [1, 10, 100, 42][2],
   wandb_save = [True, False][1],
   save_matplotlib = [True, False][0],
 )
