@@ -27,12 +27,12 @@ if __name__ == '__main__':
   config = dict(
     random_seed = [1, 10, 100, 42][2],
     iterations = 1*(10**6),
-    num_players = 5,
+    num_players = 2,
     batch_episode_num = [40, 28, 20, 20][5-2],
-    parallelized = ["DataCollect","StrategyUpdate", False][0],
-    collect_step_or_episode = ["step", "episode"][1],
+    parallelized = ["DataCollect","StrategyUpdate", False][2],
+    collect_step_or_episode = ["step", "episode"][0],
     rl_algo = ["dqn", "sql", "dfs","ddqn"][1],
-    save_matplotlib = [True, False][0],
+    save_matplotlib = [True, False][1],
     wandb_save = [True, False][1],
     whether_accurate_exploitability =[True, False, "Dont_calculate"][0],
   )

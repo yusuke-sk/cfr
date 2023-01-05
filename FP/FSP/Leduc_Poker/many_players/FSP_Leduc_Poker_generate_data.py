@@ -17,12 +17,13 @@ import FSP_Leduc_Poker_trainer
 
 
 class GenerateData:
-  def __init__(self, num_players, num_actions, infoset_action_player_dict, random_seed):
+  def __init__(self, num_players, num_actions, infoset_action_player_dict, random_seed, node_possible_action):
     self.num_players = num_players
     self.num_actions = num_actions
     self.leduc_trainer = FSP_Leduc_Poker_trainer.LeducTrainer(num_players=self.num_players)
     self.infoset_action_player_dict = infoset_action_player_dict
     self.random_seed = random_seed
+    self.node_possible_action = node_possible_action
 
     self.leduc_trainer.random_seed_fix(self.random_seed)
 
@@ -133,6 +134,63 @@ class GenerateData:
     sampling_action = np.random.choice(list(range(self.num_actions)), p=strategy[infoSet])
     nextHistory = history + self.leduc_trainer.ACTION_DICT[sampling_action]
     return self.one_episode(nextHistory, strategy)
+
+
+
+  def calculate_optimal_gap_best_response_strategy(self, strategy1, strategy2, target_player):
+    strategy1_player_list = self.strategy_split_player(strategy1)
+    strategy2_player_list = self.strategy_split_player(strategy2)
+
+    return self.calculate_avg_utility_for_strategy("", target_player, 0, [1.0 for _ in range(self.num_players)], strategy1_player_list, strategy2_player_list)
+
+
+
+  def calculate_avg_utility_for_strategy(self, history, target_player_i, iteration_t, p_list, strategy1_player_list, strategy2_player_list):
+
+    player = self.leduc_trainer.action_player(history)
+
+    if self.leduc_trainer.whether_terminal_states(history):
+      return self.leduc_trainer.Return_payoff_for_terminal_states(history, target_player_i)
+
+    elif self.leduc_trainer.whether_chance_node(history):
+      if len(history) == 0:
+        cards = self.leduc_trainer.card_distribution()
+        cards_candicates = [cards_candicate for cards_candicate in itertools.permutations(cards, self.num_players+1)]
+        utility_sum = 0
+        for cards_i in cards_candicates:
+          self.cards_i = cards_i
+          nextHistory = "".join(cards_i[:self.num_players])
+          utility_sum += (1/len(cards_candicates))* self.calculate_avg_utility_for_strategy(nextHistory, target_player_i, iteration_t, p_list, strategy1_player_list, strategy2_player_list)
+        return  utility_sum
+
+      else:
+        nextHistory = history + self.cards_i[self.num_players]
+        return self.calculate_avg_utility_for_strategy(nextHistory, target_player_i, iteration_t, p_list, strategy1_player_list, strategy2_player_list)
+
+
+    infoSet = history[player] + history[self.num_players:]
+
+    if player == target_player_i:
+      strategy = strategy1_player_list[player][infoSet]
+    else:
+      strategy = strategy2_player_list[player][infoSet]
+
+
+    util_list = np.array([0 for _ in range(self.num_actions)], dtype=float)
+    nodeUtil = 0
+
+
+    for ai in self.node_possible_action[infoSet]:
+      nextHistory = history + self.leduc_trainer.ACTION_DICT[ai]
+      p_change = np.array([1 for _ in range(self.num_players)], dtype=float)
+      p_change[player] = strategy[ai]
+
+      util_list[ai] = self.calculate_avg_utility_for_strategy(nextHistory, target_player_i, iteration_t, p_list * p_change, strategy1_player_list, strategy2_player_list)
+
+      nodeUtil += strategy[ai] * util_list[ai]
+
+
+    return nodeUtil
 
 
 doctest.testmod()

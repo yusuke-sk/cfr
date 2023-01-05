@@ -20,16 +20,16 @@ import FSP_Kuhn_Poker_trainer
 start_time = time.time()
 #config
 config = dict(
-  random_seed = [1, 10, 100, 42][3],
+  random_seed = [1, 10, 100, 42][2],
   iterations = 10**6,
-  num_players = 2,
+  num_players = 5,
   n= 2,
   m= 1,
   memory_size_rl= 10**3,
   memory_size_sl= 10**3,
   rl_algo = ["epsilon-greedy", "boltzmann", "dfs"][0],
   sl_algo = ["cnt", "mlp"][0],
-  pseudo_code = ["general_FSP", "batch_FSP"][0],
+  pseudo_code = ["general_FSP", "batch_FSP"][1],
   wandb_save = [True, False][1],
   save_matplotlib = [True, False][0],
   )

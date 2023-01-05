@@ -600,6 +600,7 @@ class LeducTrainer:
   #KuhnTrainer main method
   def train(self, n, m, memory_size_rl, memory_size_sl, wandb_save, rl_algo, sl_algo, pseudo_code):
     self.exploitability_list = {}
+    self.avg_utility_list = {}
 
     #追加 matplotlibで図を書くため
     if self.save_matplotlib:
@@ -634,10 +635,16 @@ class LeducTrainer:
 
     RL = FSP_Leduc_Poker_reinforcement_learning.ReinforcementLearning(self.random_seed, self.infoSets_dict_player, self.NUM_PLAYERS, self.NUM_ACTIONS, self.node_possible_action, self.infoset_action_player_dict)
     SL = FSP_Leduc_Poker_supervised_learning.SupervisedLearning(self.random_seed, self.NUM_PLAYERS, self.NUM_ACTIONS, self.node_possible_action, self.infoset_action_player_dict)
-    GD = FSP_Leduc_Poker_generate_data.GenerateData(self.NUM_PLAYERS, self.NUM_ACTIONS, self.infoset_action_player_dict, self.random_seed)
+    GD = FSP_Leduc_Poker_generate_data.GenerateData(self.NUM_PLAYERS, self.NUM_ACTIONS, self.infoset_action_player_dict, self.random_seed, self.node_possible_action)
+
+    self.episode_num_for_1_iteration = n + self.NUM_PLAYERS * m
 
 
-    for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
+    #for iteration_t in tqdm(range(1, int(self.train_iterations+1))):
+    for iteration_t in tqdm(range(1, int(self.train_iterations//self.episode_num_for_1_iteration)+1)):
+
+      iteration_t *= self.episode_num_for_1_iteration
+
       if pseudo_code == "batch_FSP":
         GD.generate_data1(self.avg_strategy, n, self.M_RL)
 
@@ -690,21 +697,41 @@ class LeducTrainer:
 
 
       start_calc_exploitability = time.time()
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
+
+
+      if iteration_t in  [int(j)//self.episode_num_for_1_iteration * self.episode_num_for_1_iteration   for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
+        self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
+
+        self.optimality_gap = 0
+        self.infoSets_dict = {}
+        for target_player in range(self.NUM_PLAYERS):
+          self.create_infoSets("", target_player, 1.0)
+        self.best_response_strategy_dfs = {}
+        for best_response_player_i in range(self.NUM_PLAYERS):
+          self.calc_best_response_value(self.best_response_strategy_dfs, best_response_player_i, "", 1)
+
+        for player_i in range(self.NUM_PLAYERS):
+          self.optimality_gap_i = 1/2 * (GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy_dfs, self.avg_strategy, player_i)
+           - GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy, self.avg_strategy, player_i))
+
+          self.optimality_gap += self.optimality_gap_i
 
         if wandb_save:
-          wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t]})
+            wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
+
 
         #追加 matplotlibで図を書くため
         if self.save_matplotlib:
           self.database_for_plot["iteration"].append(iteration_t)
           self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+
       end_calc_exploitability = time.time()
       self.exploitability_time += end_calc_exploitability - start_calc_exploitability
 
+      start_calc_exploitability = time.time()
 
-    #self.show_plot("FSP")
+
     if wandb_save:
       wandb.save()
 

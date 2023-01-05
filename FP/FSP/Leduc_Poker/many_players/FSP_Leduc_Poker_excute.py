@@ -20,7 +20,7 @@ import FSP_Leduc_Poker_trainer
 start_time = time.time()
 #config
 config = dict(
-  random_seed = [42][0],
+  random_seed = [1, 10, 100, 42][2],
   iterations = 10**6,
   num_players = 2,
   n= 2,

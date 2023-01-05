@@ -354,10 +354,10 @@ class KuhnTrainer:
 
     self.episode_num_for_1_iteration = n + self.NUM_PLAYERS * m
 
-    for iteration_t in tqdm(range(1, int(self.train_iterations+1))):
-    #for iteration_t in tqdm(range(1, int(self.train_iterations//self.episode_num_for_1_iteration)+1)):
+    #for iteration_t in tqdm(range(1, int(self.train_iterations+1))):
+    for iteration_t in tqdm(range(1, int(self.train_iterations//self.episode_num_for_1_iteration)+1)):
 
-      #iteration_t *= self.episode_num_for_1_iteration
+      iteration_t *= self.episode_num_for_1_iteration
 
       if pseudo_code == "batch_FSP":
 
@@ -422,8 +422,8 @@ class KuhnTrainer:
 
       start_calc_exploitability = time.time()
 
-      if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
-      #if iteration_t in [int(j)//self.episode_num_for_1_iteration * self.episode_num_for_1_iteration   for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
+      #if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
+      if iteration_t in [int(j)//self.episode_num_for_1_iteration * self.episode_num_for_1_iteration   for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
 
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])

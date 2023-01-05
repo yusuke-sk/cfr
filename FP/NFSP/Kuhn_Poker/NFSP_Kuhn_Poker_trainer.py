@@ -112,6 +112,7 @@ class KuhnTrainer:
         self.calculate_evalation_values(iteration_t)
       end_calc_exploitability = time.time()
       self.exploitability_time += end_calc_exploitability - start_calc_exploitability
+      print(end_calc_exploitability - start_calc_exploitability)
 
 
   def calculate_evalation_values(self, iteration_t):
