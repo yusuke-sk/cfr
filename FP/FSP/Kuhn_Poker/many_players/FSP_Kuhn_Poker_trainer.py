@@ -317,6 +317,7 @@ class KuhnTrainer:
   def train(self, n, m, memory_size_rl, memory_size_sl, wandb_save, rl_algo, sl_algo, pseudo_code):
     self.exploitability_list = {}
     self.avg_utility_list = {}
+    self.wandb_save = wandb_save
 
     #追加 matplotlibで図を書くため
     if self.save_matplotlib:
@@ -351,7 +352,12 @@ class KuhnTrainer:
     GD = FSP_Kuhn_Poker_generate_data.GenerateData(self.NUM_PLAYERS, self.NUM_ACTIONS, self.random_seed)
 
 
-    for iteration_t in tqdm(range(1, int(self.train_iterations)+1)):
+    self.episode_num_for_1_iteration = n + self.NUM_PLAYERS * m
+
+    for iteration_t in tqdm(range(1, int(self.train_iterations+1))):
+    #for iteration_t in tqdm(range(1, int(self.train_iterations//self.episode_num_for_1_iteration)+1)):
+
+      #iteration_t *= self.episode_num_for_1_iteration
 
       if pseudo_code == "batch_FSP":
 
@@ -381,7 +387,10 @@ class KuhnTrainer:
 
 
       elif pseudo_code == "general_FSP":
+        #eta = 1/((iteration_t/self.episode_num_for_1_iteration)+1)
         eta = 1/(iteration_t+1)
+
+        #n + m * self.num_players のエピソードが生成されている
         D = GD.generate_data0(self.avg_strategy, self.best_response_strategy, n, m, eta)
 
         for player_i in range(self.NUM_PLAYERS):
@@ -405,8 +414,17 @@ class KuhnTrainer:
           elif sl_algo == "mlp":
             SL.SL_train_MLP(self.M_SL[player_i], player_i, self.avg_strategy)
 
+
+
+      #ここで可搾取量選択するタイミングを調整する これ使うと早いんだけど、他と合わせる為に毎回計算する
+      #exploitability_check_t = [int(j)//self.episode_num_for_1_iteration * self.episode_num_for_1_iteration   for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)]
+
+
       start_calc_exploitability = time.time()
+
       if iteration_t in [int(j) for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
+      #if iteration_t in [int(j)//self.episode_num_for_1_iteration * self.episode_num_for_1_iteration   for j in np.logspace(0, len(str(self.train_iterations)), (len(str(self.train_iterations)))*10 , endpoint=False)] :
+
         self.exploitability_list[iteration_t] = self.get_exploitability_dfs()
         self.avg_utility_list[iteration_t] = self.eval_vanilla_CFR("", 0, 0, [1.0 for _ in range(self.NUM_PLAYERS)])
 
@@ -421,29 +439,23 @@ class KuhnTrainer:
 
         for player_i in range(self.NUM_PLAYERS):
           self.optimality_gap += 1/2 * ( GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy_dfs, self.avg_strategy, player_i)
-           - GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy, self.avg_strategy, player_i))
+            - GD.calculate_optimal_gap_best_response_strategy(self.best_response_strategy, self.avg_strategy, player_i))
+
+        if self.wandb_save:
+            wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
 
 
-        #if self.optimality_gap != 0:
-          #print(self.best_response_strategy_dfs)
-          #print(self.best_response_strategy)
-        """
-        print("")
-        for i in range(self.NUM_PLAYERS):
-          for ii, jj in zip(RL.player_q_state[i].keys(), self.Q_value[i]):
-            print(ii, jj)
-        print("")
-        """
-
-        if wandb_save:
-          wandb.log({'iteration': iteration_t, 'exploitability': self.exploitability_list[iteration_t], 'avg_utility': self.avg_utility_list[iteration_t], 'optimal_gap':self.optimality_gap})
-
-        #追加 matplotlibで図を書くため
+          #追加 matplotlibで図を書くため
         if self.save_matplotlib:
-          self.database_for_plot["iteration"].append(iteration_t)
-          self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+            self.database_for_plot["iteration"].append(iteration_t)
+            self.database_for_plot[self.ex_name].append(self.exploitability_list[iteration_t])
+
       end_calc_exploitability = time.time()
+
       self.exploitability_time += end_calc_exploitability - start_calc_exploitability
+      #print(iteration_t, self.exploitability_time)
+
+
 
 
 
