@@ -3,11 +3,6 @@
 	 <img src="https://img.shields.io/github/license/yu5uke-1024/poker_and_game_theory">
 </p>
 
-<p align="center">
-  <img src="https://user-images.githubusercontent.com/63486375/215392144-c07ad647-5636-46ac-94a4-47fbcfdeee1c.png">
-</p>
-<br/>
-
 # Poker and Game theory with Python
 
 I introduce poker and game theory with Python.
@@ -32,7 +27,7 @@ Game is Kuhn Poker and alogrithm is CFR, outcome sampling MCCFR, FSP and NFSP .
 
 <br/>
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/63486375/167860623-1b4e7741-6602-414f-8d93-1fe5f8647ac7.png", width=640>
+  <img src="https://user-images.githubusercontent.com/63486375/215392888-3fdc06a7-4d37-4167-99a2-8bc21ec9eef0.png", width=640>
 </p>
 <br/>
 
