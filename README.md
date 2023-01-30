@@ -34,7 +34,6 @@ Game is Kuhn Poker and alogrithm is CFR, outcome sampling MCCFR, FSP and NFSP .
 # Contents
 
 - [Document: Poker and Game theory with Python](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/Doc)
--
 - [CFR (Counter Factual Regretminimization)](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/CFR)
   - [Regret Matching](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/RegretMatching)
     - [RPS (Rock, Paper, Scissors)](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/RegretMatching/RPS)
