@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/63486375/167800473-e344baff-921d-45dc-9234-8f992163d83a.JPG">
+  <img src="https://user-images.githubusercontent.com/63486375/215392144-c07ad647-5636-46ac-94a4-47fbcfdeee1c.png">
 </p>
 <br/>
 
@@ -12,7 +12,7 @@
 
 I introduce poker and game theory with Python.
 
-The algorithms we use are CFR, MCCFR and FSP. (add it from time to time)
+The algorithms we use are CFR, MCCFR and FSP and NFSP ...
 
 The games we play are RPS, Kuhn Poker and Leduc Poker.
 
@@ -28,7 +28,7 @@ To people who want to study poker, game theory by using Python.
 
 This graph show the result of decreasing exploitability by iterations.
 
-Game is Kuhn Poker and alogrithm is vanilla CFR, chance sampling CFR, external sampling MCCFR and outcome sampling MCCFR.
+Game is Kuhn Poker and alogrithm is CFR, outcome sampling MCCFR, FSP and NFSP .
 
 <br/>
 <p align="center">
@@ -39,9 +39,10 @@ Game is Kuhn Poker and alogrithm is vanilla CFR, chance sampling CFR, external s
 # Contents
 
 - [Document: Poker and Game theory with Python](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/Doc)
-- [Regret Matching](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/RegretMatching)
-  - [RPS (Rock, Paper, Scissors)](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/RegretMatching/RPS)
+-
 - [CFR (Counter Factual Regretminimization)](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/CFR)
+  - [Regret Matching](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/RegretMatching)
+    - [RPS (Rock, Paper, Scissors)](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/RegretMatching/RPS)
   - [Kuhn Poker](https://github.com/yu5uke-1024/poker_and_game_theory/tree/main/CFR/Kuhn_Poker)
     - [two players](https://github.com/yu5uke-1024/poker_and_game_theory/blob/d559d0b658ea4ec3e5d3b4aabd225f6e6dc9ac63/CFR/Kuhn_Poker/CFR_Kuhn_Poker_two_player_exploitability_dfs.py)
     - [many players](https://github.com/yu5uke-1024/poker_and_game_theory/blob/d559d0b658ea4ec3e5d3b4aabd225f6e6dc9ac63/CFR/Kuhn_Poker/CFR_Kuhn_Poker.py)
